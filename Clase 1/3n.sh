@@ -5,5 +5,5 @@
 #
 
 clear
-echo $HOME
+echo $HOME # Mostrará por pantalla la ubicación de la carpeta de usuario.
 exit 0
