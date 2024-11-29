@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para mostrar la el nombre del sistema operativo.
 #

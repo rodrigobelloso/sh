@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para imprimir un saludo, la fecha y el número de usuarios con sesión iniciada.
 #

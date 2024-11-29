@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para demostrar las posibilidades de dejar una variable nula.
 #

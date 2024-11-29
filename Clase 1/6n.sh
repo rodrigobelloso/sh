@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para hacer una pequeña suma de números predefinidos.
 #

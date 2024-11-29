@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para mostrar la información de Bash.
 #

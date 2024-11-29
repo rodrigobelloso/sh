@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 #
 # Mi primer script en bash.

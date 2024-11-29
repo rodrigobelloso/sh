@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para mostrar la ubicación de la carpeta de usuario (/home).
 #
