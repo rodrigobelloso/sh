@@ -5,7 +5,7 @@
 #
 
 clear
-nombre="Juan" # Se define la variable nombre.
-apellido="Pérez" # Se define la variable apellido.
-echo "¡Hola, soy $nombre $apellido!" # Se muestra por pantalla el saludo.
+nombre="Juan"
+apellido="Pérez"
+echo "¡Hola, soy $nombre $apellido!"
 exit 0

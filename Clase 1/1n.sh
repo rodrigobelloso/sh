@@ -5,5 +5,5 @@
 #
 
 clear
-echo "Hola mundo!" # Mostrará por pantalla "Hola"
+echo "Hola mundo!"
 exit 0

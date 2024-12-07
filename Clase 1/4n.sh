@@ -5,5 +5,5 @@
 #
 
 clear
-echo $OSTYPE # Mostrará por pantalla el nombre del sistema operativo.
+echo $OSTYPE
 exit 0
