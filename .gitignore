@@ -14,9 +14,6 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 
-# El icono debe terminar con dos \r
-Icon
-
 # Miniaturas
 ._*
 
