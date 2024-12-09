@@ -6,8 +6,8 @@
 
 clear
 echo "Hola $USER!"
-echo "Espero que estés pasando un buen día.\n"
+printf "Espero que estés pasando un buen día.\n\n"
 echo "Hoy es: \c";date
 echo "Número de usuarios con la sesión iniciada: \c" ; who | wc -l
-echo "\nCalendario: ";cal
+printf "\nCalendario: "; cal
 exit 0
