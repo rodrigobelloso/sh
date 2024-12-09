@@ -5,5 +5,5 @@
 #
 
 clear
-echo $OSTYPE
+echo "$OSTYPE"
 exit 0
