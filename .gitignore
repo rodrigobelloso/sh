@@ -1,0 +1,31 @@
+# Archivos específicos de macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# El icono debe terminar con dos \r
+Icon
+
+# Miniaturas
+._*
+
+# Archivos que pueden aparecer en la raíz de un volumen
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directorios potencialmente creados en un recurso compartido AFP remoto
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Archivos específicos de scripts de shell
+*.sh~
+*.sh.swp
+*.sh.swo
