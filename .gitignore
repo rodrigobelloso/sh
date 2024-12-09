@@ -1,7 +1,7 @@
 # Archivos específicos de macOS
-.DS_Store
-.AppleDouble
-.LSOverride
+*.DS_Store
+*.AppleDouble
+*.LSOverride
 
 # El icono debe terminar con dos \r
 Icon
