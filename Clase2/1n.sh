@@ -4,9 +4,10 @@
 # Script para imprimir una pirámide de #.
 #
 
-read -p "Introduce un número: " n
+read -r -p "Introduce un número: " n
 
 for ((i=1; i<=n; i++))
 do
-    echo "$(printf '#%.0s' $(seq 1 $i))"
+    printf '#%.0s' $(seq 1 "$i")
+    printf '\n'
 done
