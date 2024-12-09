@@ -1,4 +1,4 @@
-name: Linter de scripts shell
+name: linter
 
 on:
   push:
@@ -13,7 +13,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Crear hash de archivos shell
+        id: shell-files-hash
+        run: echo "hash=$(find . -name "*.sh" -type f -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Cargar caché de shellcheck
+        id: cache-shellcheck
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/shellcheck
+          key: shellcheck-${{ steps.shell-files-hash.outputs.hash }}
+          restore-keys: |
+            shellcheck-
+
       - name: Instalar shellcheck
+        if: steps.cache-shellcheck.outputs.cache-hit != 'true'
         run: sudo apt-get install -y shellcheck
 
       - name: Verificar sintaxis de scripts
