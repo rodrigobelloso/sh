@@ -5,5 +5,5 @@
 #
 
 clear
-echo $HOME
+echo "$HOME"
 exit 0
