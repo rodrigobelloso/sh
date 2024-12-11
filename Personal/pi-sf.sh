@@ -6,7 +6,7 @@
 
 restaurarTablaParticiones() {
     clear
-    sudo sfdisk /dev/mmcblk0 < /mnt/share/bckp/partTable/pi/sf --no-reread
+    sudo bash -c 'cat /mnt/share/bckp/partTable/pi/sf | sfdisk /dev/mmcblk0 --no-reread'
     clear
     reboot
     exit 0
@@ -14,7 +14,7 @@ restaurarTablaParticiones() {
 
 while true; do
     echo "Estás a punto de restaurar la tabla de particiones mientras el sistema está en ejecución. \a"
-    read -p "¿Estás seguro de esto? [s,n]: " respuesta
+    read -r -p "¿Estás seguro de esto? [s,n]: " respuesta
     
     case $respuesta in
         s|S)
@@ -26,7 +26,7 @@ while true; do
             ;;
         *)
             echo "$respuesta es una opción inválida, por favor escribe 's' o 'n'."
-            echo "\n"
+            printf "\n"
             ;;
     esac
 done
