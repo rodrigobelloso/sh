@@ -7,5 +7,5 @@
 clear
 echo "Hoy es date"
 echo 'Hoy es date'
-echo "Hoy es `date`"
+echo "Hoy es $(date)"
 exit 0
