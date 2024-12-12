@@ -5,6 +5,7 @@
 #
 
 clear
-echo "¿Cómo te llamas?:";read nombre
+echo "¿Cómo te llamas?:"
+read -r nombre
 echo "¡Hola $nombre!"
 exit 0
