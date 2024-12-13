@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# Script para imprimir una pirámide equilátera de #.
+#
+
 read -r -p "Introduce un número: " num
 
 for (( i=1; i<=num; i++ ))
@@ -11,7 +15,7 @@ do
     
     for (( k=1; k<=(2*i-1); k++ ))
     do
-        echo -n "*"
+        echo -n "#"
     done
     
     echo ""
