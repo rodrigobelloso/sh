@@ -5,6 +5,7 @@
 #
 
 clear
+
 while true; do
     read -r -p "Introduce un número: " n
     if [[ "$n" =~ ^[0-9]+$ ]]; then
@@ -19,3 +20,5 @@ do
     printf '#%.0s' $(seq 1 "$i")
     printf '\n'
 done
+
+exit 0

@@ -4,6 +4,8 @@
 # Script para imprimir una pirámide equilátera de #.
 #
 
+clear
+
 read -r -p "Introduce un número: " num
 
 for (( i=1; i<=num; i++ ))
@@ -20,3 +22,5 @@ do
     
     echo ""
 done
+
+exit 0
