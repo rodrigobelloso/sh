@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -p "Introduce un número: " num
+read -r -p "Introduce un número: " num
 
 for (( i=1; i<=num; i++ ))
 do
