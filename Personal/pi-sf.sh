@@ -28,3 +28,5 @@ while true; do
             echo "$respuesta es una opción inválida, por favor escribe 's' o 'n'."
             printf "\n"
             ;;
+    esac
+done
