@@ -13,7 +13,7 @@ restaurarTablaParticiones() {
 }
 
 while true; do
-    echo "Estás a punto de restaurar la tabla de particiones mientras el sistema está en ejecución. \a"
+    printf "Estás a punto de restaurar la tabla de particiones mientras el sistema está en ejecución. \a\n"
     read -r -p "¿Estás seguro de esto? [s,n]: " respuesta
     
     case $respuesta in
@@ -28,5 +28,3 @@ while true; do
             echo "$respuesta es una opción inválida, por favor escribe 's' o 'n'."
             printf "\n"
             ;;
-    esac
-done
