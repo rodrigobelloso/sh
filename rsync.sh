@@ -1,0 +1,1 @@
+rsync -avz --progress ./ rodrigobo@10.130.1.200:~/
