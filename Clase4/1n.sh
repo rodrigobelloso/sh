@@ -15,7 +15,7 @@ for ((i=1; i<=INTENTOS; i++)); do
 
     sleep 2
     
-    if [ $i -lt $MAX_ATTEMPTS ]; then
+    if [ $i -lt $INTENTOS ]; then
         echo "Login incorrect"
         sleep 1
     fi
