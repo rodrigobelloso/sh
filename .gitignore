@@ -37,3 +37,6 @@ Temporary Items
 *.sh~
 *.sh.swp
 *.sh.swo
+
+# Archivo de configuración de rsync
+rsync.conf
