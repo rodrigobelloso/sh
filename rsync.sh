@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #
-# Script para sincronizar archivos al servidor remoto
+# Script para sincronizar archivos al servidor de clase.
 #
 
 REMOTE_USER="rodrigobo"
 REMOTE_HOST="10.130.1.200"
-REMOTE_PATH="~/sh"
+REMOTE_PATH="$HOME/sh"
 SOURCE_DIR="./"
 
 if ! command -v rsync &> /dev/null; then
