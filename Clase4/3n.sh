@@ -4,7 +4,7 @@
 # Script para buscar un archivo y escribir hola en el.
 #
 
-read -p "Introduce la ruta del fichero: " archivo
+read -r -p "Introduce la ruta del fichero: " archivo
 
 if [ ! -f "$archivo" ]; then
     echo "El archivo no existe o no es un fichero regular"
