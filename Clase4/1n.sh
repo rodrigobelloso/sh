@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# Script para simular un login de Linux.
+#
+
 LOGS="credenciales.log"
 INTENTOS=3
 
