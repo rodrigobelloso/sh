@@ -36,5 +36,6 @@ done
 echo "Login incorrect"
 sleep 1
 clear
+logout
 
 exit 0
