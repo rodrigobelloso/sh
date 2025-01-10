@@ -20,7 +20,7 @@ fi
 
 for pid in $pids; do
     echo "Se ha matado el proceso $pid"
-    kill -9 $pid 2>/dev/null
+    kill -9 "$pid" 2>/dev/null
 done
 
 echo "Se han matado todos los procesos que coinciden con: $busqueda"
