@@ -8,7 +8,7 @@ usuarios=$(who | wc -l)
 
 echo "Actualmente hay $usuarios usuarios conectados"
 
-if [ $usuarios -gt 2 ]; then
+if [ "$usuarios" -gt 2 ]; then
     echo "3 son multitud"
 fi
 exit 0;
