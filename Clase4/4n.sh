@@ -11,7 +11,7 @@ fi
 
 busqueda="$1"
 
-pids=$(ps aux | grep "$busqueda" | grep -v "grep" | grep -v "$0" | awk '{print $2}')
+pids=$(pgrep -f "$busqueda" | grep -v $$)
 
 if [ -z "$pids" ]; then
     echo "No se ha encontrado el proceso: $busqueda"
