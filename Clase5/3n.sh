@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# Script que devuelve el parametro introducido excepto si es 777.
+#
+
 if [ $# -ne 3 ]; then
     echo "Usage: $0 filename start_line end_line"
     exit 1
