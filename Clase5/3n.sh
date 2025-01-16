@@ -14,6 +14,6 @@ if [ ! -f "$filename" ]; then
     exit 1
 fi
 
-lines=$(expr $end - $start + 1)
+lines=$(( end - start + 1 ))
 
-head -n $end "$filename" | tail -n $lines
+head -n "$end" "$filename" | tail -n "$lines"
