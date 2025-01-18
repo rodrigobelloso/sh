@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #
 # Script para sincronizar archivos al servidor de clase.
 #
@@ -7,30 +5,27 @@
 if [ $# -eq 1 ]; then
     ubicacion=$1
 else
-    echo "¿Dónde te encuentras? (casa/clase/otro): "
-    read -r ubicacion
+    read -rp "¿Dónde te encuentras? (casa/clase/otro): " ubicacion
 fi
 
 case "$ubicacion" in
-    "clase")
+    "c"|"clase")
         rsync -avz --progress ./ rodrigobo@10.130.1.200:~/sh
         ;;
-    "casa")
+    "h"|"casa")
         rsync -avz --progress ./ silo@silo.local:~/sh
         ;;
-    "otro")
-        echo "Introduce el nombre de usuario: "
-        read -r usuario
-        echo "Introduce la dirección IP: "
-        read -r ip
+    "o"|"otro")
+        read -rp "Introduce el nombre de usuario: " usuario
+        read -rp "Introduce la dirección IP: " ip
         if [ -z "$usuario" ] || [ -z "$ip" ]; then
-            echo "Error: Usuario e IP son obligatorios"
+            echo "Error: El usuario y la dirección IP son obligatorios."
             exit 1
         fi
         rsync -avz --progress ./ "$usuario@$ip:~/sh"
         ;;
     *)
-        echo "Error: La ubicación debe ser 'casa', 'clase' u 'otro'"
+        echo "Error: La ubicación debe ser 'c' (clase), 'h' (casa) u 'o' (otro)."
         exit 1
         ;;
 esac
