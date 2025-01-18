@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 # Script para sincronizar archivos al servidor de clase.
 #
