@@ -7,7 +7,7 @@
 for i in {1..10}
 do
     mkdir "dir$i"
-    echo "texto en el directorio $i" > "dir$i/fichero.txt"
+    echo "Archivo en el directorio $i" > "dir$i/fichero.txt"
 done
 
 exit 0
