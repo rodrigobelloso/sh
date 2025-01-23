@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Script que devuelve el parametro introducido excepto si es 777.
+# Script que muestra sólo las columnas de login y carpeta de usuario.
 #
 
 cut -d: -f1,6 /etc/passwd
