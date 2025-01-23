@@ -5,7 +5,7 @@
 #
 
 echo "Introduce un número para calcular su factorial:"
-read num
+read -r num
 
 if ! [[ "$num" =~ ^[0-9]+$ ]]; then
     echo "Error: Por favor introduce un número entero positivo"
