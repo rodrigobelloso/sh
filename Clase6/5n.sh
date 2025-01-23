@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Script para procesar archivos.
+# Script para visualizar y ordenar archivos.
 #
 
 if [ $# -ne 2 ]; then
