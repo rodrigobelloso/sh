@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #
 # Solicita el nombre al usuario y muestra un mensaje de bienvenida
 #
