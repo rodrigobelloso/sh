@@ -1,4 +1,4 @@
-name: linter
+name: Linter
 
 on:
   push:
@@ -15,37 +15,28 @@ jobs:
 
       - name: Crear hash de archivos shell
         id: shell-files-hash
-        run: echo "hash=$(find . -name "*.sh" -type f -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+        run: |
+          HASH=$(find . -name "*.sh" -type f -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
 
-      - name: Cargar caché de shellcheck
-        id: cache-shellcheck
+      - name: Configurar caché de shellcheck
         uses: actions/cache@v3
         with:
-          path: ~/.cache/shellcheck
-          key: shellcheck-${{ steps.shell-files-hash.outputs.hash }}
+          path: |
+            ~/.local/bin/shellcheck
+            ~/.cabal/bin/shellcheck
+          key: ${{ runner.os }}-shellcheck-${{ steps.shell-files-hash.outputs.hash }}
           restore-keys: |
-            shellcheck-
+            ${{ runner.os }}-shellcheck-
 
       - name: Instalar shellcheck
         if: steps.cache-shellcheck.outputs.cache-hit != 'true'
-        run: sudo apt-get install -y shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
 
       - name: Verificar sintaxis de scripts
         run: |
           for file in $(find . -name "*.sh"); do
-            bash -n "$file"
-          done
-
-      - name: Ejecutar shellcheck
-        run: |
-          for file in $(find . -name "*.sh"); do
             shellcheck "$file"
-          done
-
-      - name: Verificar permisos de ejecución
-        run: |
-          for file in $(find . -name "*.sh"); do
-            if [ ! -x "$file" ]; then
-              echo "Advertencia: $file no tiene permisos de ejecución"
-            fi
           done
