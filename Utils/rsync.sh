@@ -4,6 +4,8 @@
 # Script para sincronizar archivos al servidor de clase.
 #
 
+cd ..
+
 if [ $# -eq 1 ]; then
     ubicacion=$1
 else

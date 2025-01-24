@@ -4,6 +4,8 @@
 # Script para contar todos los archivos del proyecto
 #
 
+cd ..
+
 total_files=$(find . -type f | wc -l)
 
 sh_files=$(find . -name "*.sh" -type f | wc -l)
