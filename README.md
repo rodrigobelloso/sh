@@ -7,11 +7,7 @@ estos ejercicios son las prácticas llevadas a cabo durante las clases de Implan
 
 ## conceptos abordados
 
-- Impresión de texto por pantalla: Clase 1
-- Uso de variables del sistema: Clase 1
-- Aplicación de variables definidas por el usuario: Clase 1
-- Tipos de impresión por pantalla: Clase 1
-- Bucles y repeticiones: Clase 2
+_pendiente de actualización_
 
 ## licencia
 
