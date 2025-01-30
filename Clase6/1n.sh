@@ -1,11 +1,15 @@
 #!/bin/bash
 
 #
-# Script para escribir por pantalla el factorial del mismo.
+# Script para calcular el factorial de un número
 #
 
-echo "Introduce un número para calcular su factorial:"
-read -r num
+if [ $# -eq 0 ]; then
+    echo "Introduce un número: "
+    read num
+else
+    num=$1
+fi
 
 if ! [[ "$num" =~ ^[0-9]+$ ]]; then
     echo "Error: Por favor introduce un número entero positivo"
