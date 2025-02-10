@@ -20,3 +20,5 @@ while [ $j -lt ${#NOMBRES[@]} ]; do
     echo "Nombre: ${NOMBRES[j]}"
     ((j++))
 done
+
+exit 0

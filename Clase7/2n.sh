@@ -38,3 +38,5 @@ else
     echo "Error al copiar el archivo"
     exit 1
 fi
+
+exit 0
