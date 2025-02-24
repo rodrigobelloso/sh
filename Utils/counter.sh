@@ -23,7 +23,7 @@ printf "Otros archivos: %d\n" "$other_files"
 
 sum_files=$((sh_files + yml_files + md_files + other_files))
 
-if [ $sum_files -eq $total_files ]; then
+if [ "$sum_files" -eq "$total_files" ]; then
     echo "--------------------------"
     echo "La suma de archivos coincide con el total. Todo correcto."
     exit 0
