@@ -1,4 +1,4 @@
-[![GitHub Actions tests](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![GitHub Actions linter](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml) [![GitHub Actions markdownLinks](https://github.com/rodrigobelloso/sh/actions/workflows/markdownLinks.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/markdownLinks.yml) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 # sh
 
