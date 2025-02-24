@@ -1,4 +1,4 @@
-[![GitHub Actions linter](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml) [![GitHub Actions markdownLinks](https://github.com/rodrigobelloso/sh/actions/workflows/markdownLinks.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/markdownLinks.yml) [![GitHub license](https://img.shields.io/badge/license-GPL_3.0-yellow.svg)](./LICENSE)
+[![GitHub Actions linter](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/linter.yml) [![GitHub Actions markdownLinks](https://github.com/rodrigobelloso/sh/actions/workflows/markdownLinks.yml/badge.svg)](https://github.com/rodrigobelloso/sh/actions/workflows/markdownLinks.yml) [![GitHub License](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](./LICENSE)
 
 # sh
 
@@ -11,4 +11,4 @@ _pendiente de actualización_
 
 ## licencia
 
-sh se encuentra bajo la licencia [GPL-3.0]('./LICENSE').
+sh se encuentra bajo la licencia [GPL-3.0](./LICENSE).
