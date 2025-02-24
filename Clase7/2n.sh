@@ -10,12 +10,12 @@ COMPRESSED_FILE="home_listing.tar.gz"
 
 mkdir -p $TEMP_DIR
 
-ls -R $HOME > "$TEMP_DIR/$BACKUP_FILE"
+ls -R "$HOME" > "$TEMP_DIR/$BACKUP_FILE"
 
 tar -czf "$TEMP_DIR/$COMPRESSED_FILE" -C $TEMP_DIR $BACKUP_FILE
 
 echo "Por favor, inserte la unidad USB y presione ENTER..."
-read
+read -r
 
 USB_MOUNT=$(df -h | grep "/Volumes/" | grep -v "Time Machine" | head -n 1)
 
