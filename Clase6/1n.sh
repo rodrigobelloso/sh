@@ -6,7 +6,7 @@
 
 if [ $# -eq 0 ]; then
     echo "Introduce un número: "
-    read num
+    read -r num
 else
     num=$1
 fi
