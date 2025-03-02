@@ -16,16 +16,25 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "22"
+          node-version: "18" # Cambiado a 18 que es más estable que 22
 
       - name: Instalar markdown-link-check
         run: npm install -g markdown-link-check
 
       - name: Verificar enlaces en archivos Markdown
         run: |
-          EXIT_CODE=0
+          ERROR_FILES=""
           for file in $(find . -name "*.md"); do
             echo "Verificando enlaces en $file"
-            markdown-link-check --quiet "$file" || { echo "Error: Enlaces rotos encontrados en $file"; EXIT_CODE=1; }
+            if ! markdown-link-check --quiet "$file"; then
+              echo "::error::Enlaces rotos encontrados en $file"
+              ERROR_FILES="$ERROR_FILES $file"
+            fi
           done
-          exit $EXIT_CODE
+
+          if [ ! -z "$ERROR_FILES" ]; then
+            echo "::error::Se encontraron enlaces rotos en los siguientes archivos: $ERROR_FILES"
+            exit 1
+          else
+            echo "Todos los enlaces verificados están funcionando correctamente."
+          fi
