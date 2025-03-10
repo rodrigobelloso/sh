@@ -1,25 +1,42 @@
 #!/bin/bash
 
 #
-# Bucles recorriendo un array
+# Script para gestionar los archivos de la papelera.
 #
 
-COLORES=("rojo" "verde" "azul" "morado")
-NOMBRES=("Pablo" "Juan" "Antonio" "María")
+PAPELERA="$HOME/.papelera"
 
-i=0
-while [ $i -lt ${#COLORES[@]} ]; do
-    echo "Color: ${COLORES[i]}"
-    ((i++))
+if [ ! -d "$PAPELERA" ]; then
+    echo "La papelera está vacía"
+    exit 0
+fi
+
+NUM_ELEMENTOS=$(find "$PAPELERA" -maxdepth 1 -not -path "$PAPELERA/.info" -not -path "$PAPELERA" | wc -l)
+
+if [ "$NUM_ELEMENTOS" -eq 0 ]; then
+    echo "La papelera está vacía"
+    exit 0
+fi
+
+echo "Contenido de la papelera:"
+echo "-------------------------"
+
+for ELEMENTO in "$PAPELERA"/*; do
+    if [ "$ELEMENTO" != "$PAPELERA/.info" ]; then
+        NOMBRE=$(basename "$ELEMENTO")
+        echo -n "- $NOMBRE"
+        
+        if [ -f "$PAPELERA/.info/$NOMBRE.info" ]; then
+            RUTA_ORIGINAL=$(cat "$PAPELERA/.info/$NOMBRE.info")
+            echo " (ubicación original: $RUTA_ORIGINAL)"
+        else
+            echo ""
+        fi
+    fi
 done
 
-echo "-------------------"
-
-j=0
-while [ $j -lt ${#NOMBRES[@]} ]; do
-    echo "Nombre: ${NOMBRES[j]}"
-    ((j++))
-done
+ESPACIO=$(du -sh "$PAPELERA" | cut -f1)
+echo "-------------------------"
+echo "Espacio ocupado: $ESPACIO"
 
 exit 0
-

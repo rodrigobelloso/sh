@@ -1,42 +1,60 @@
 #!/bin/bash
 
 #
-# Crea una copia de seguridad de /home en una unidad USB.
+# Script para mover archivos y directorios de nuestra papelera a su ubicación original.
 #
 
-TEMP_DIR="/tmp/home_backup"
-BACKUP_FILE="home_listing.txt"
-COMPRESSED_FILE="home_listing.tar.gz"
+PAPELERA="$HOME/.papelera"
 
-mkdir -p $TEMP_DIR
-
-ls -R "$HOME" > "$TEMP_DIR/$BACKUP_FILE"
-
-tar -czf "$TEMP_DIR/$COMPRESSED_FILE" -C $TEMP_DIR $BACKUP_FILE
-
-echo "Por favor, inserte la unidad USB y presione ENTER..."
-read -r
-
-USB_MOUNT=$(df -h | grep "/Volumes/" | grep -v "Time Machine" | head -n 1)
-
-if [ -z "$USB_MOUNT" ]; then
-    echo "Error: No se detectó ninguna unidad USB"
+if [ $# -eq 0 ]; then
+    echo "Uso: restaura <nombre> [ruta]"
     exit 1
 fi
 
-USB_PATH=$(echo "$USB_MOUNT" | awk '{print $NF}')
+if [ ! -d "$PAPELERA" ]; then
+    echo "Error: La papelera no existe"
+    exit 1
+fi
 
-if cp "$TEMP_DIR/$COMPRESSED_FILE" "$USB_PATH"; then
-    echo "Archivo copiado exitosamente a $USB_PATH"
-    echo "El archivo comprimido es: $USB_PATH/$COMPRESSED_FILE"
+NOMBRE="$1"
 
-    rm -rf "$TEMP_DIR"
-    
-    echo "Para desmontar la unidad USB de forma segura, ejecute:"
-    echo "diskutil unmount \"$USB_PATH\""
+if [ ! -e "$PAPELERA/$NOMBRE" ]; then
+    echo "Error: '$NOMBRE' no está en la papelera"
+    exit 1
+fi
+
+if [ $# -gt 1 ]; then
+    DESTINO="$2"
+    if [ ! -d "$DESTINO" ]; then
+        echo "Error: El directorio destino '$DESTINO' no existe"
+        exit 1
+    fi
 else
-    echo "Error al copiar el archivo"
+    DESTINO="$(pwd)"
+fi
+
+if [ -f "$PAPELERA/.info/$NOMBRE.info" ]; then
+    RUTA_ORIGINAL=$(cat "$PAPELERA/.info/$NOMBRE.info")
+    DIRECTORIO_ORIGINAL=$(dirname "$RUTA_ORIGINAL")
+    
+    if [ $# -eq 1 ]; then
+        if [ -d "$DIRECTORIO_ORIGINAL" ]; then
+            DESTINO="$DIRECTORIO_ORIGINAL"
+        fi
+    fi
+fi
+
+if [ -e "$DESTINO/$(basename "$NOMBRE")" ]; then
+    echo "Error: Ya existe un archivo con ese nombre en el destino"
     exit 1
 fi
+
+mv "$PAPELERA/$NOMBRE" "$DESTINO/"
+
+if [ -f "$PAPELERA/.info/$NOMBRE.info" ]; then
+    rm "$PAPELERA/.info/$NOMBRE.info"
+fi
+
+echo "El elemento '$NOMBRE' se ha restaurado en '$DESTINO'"
 
 exit 0
