@@ -31,10 +31,8 @@ fi
 
 linea_aleatoria=$(( RANDOM % cartas_restantes + 1 ))
 
-# Obtener la carta antes de eliminarla
 carta=$(sed -n "${linea_aleatoria}p" "$BARAJA_FILE")
 
-# Eliminar la carta del archivo
 sed -i '' "${linea_aleatoria}d" "$BARAJA_FILE"
 
 echo "Carta: $carta"
