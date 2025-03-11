@@ -7,6 +7,6 @@
 edad=20
 
 mensaje=$( [ $edad -ge 18 ] && echo "Mayor de edad" || echo "Menor de edad" )
-echo $mensaje
+echo "$mensaje"
 
 exit 0
