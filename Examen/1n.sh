@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Crea una copia de sí mismo usando cat y $0
+# Uso básico de un bucle for.
 #
 
 for i in {1..5}; do
