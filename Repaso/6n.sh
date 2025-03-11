@@ -21,3 +21,4 @@ case $dia in
         ;;
 esac
 
+exit 0

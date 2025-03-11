@@ -12,4 +12,3 @@ until [ $numero -gt 5 ]; do
 done
 
 exit 0
-

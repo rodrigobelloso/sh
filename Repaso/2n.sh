@@ -12,4 +12,3 @@ while [ $contador -le 5 ]; do
 done
 
 exit 0
-
