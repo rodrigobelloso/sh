@@ -19,7 +19,7 @@ TTY=$(tty | sed 's/\/dev\///')
 
 for ((i=1; i<=INTENTOS; i++)); do
     echo -e "$OS_NAME $TTY\n"
-    read -r -p "$OSTYPE login: " usuario
+    read -r -p "$OS_NAME login: " usuario
     read -r -s -p "Password: " contrasena
     echo
 
