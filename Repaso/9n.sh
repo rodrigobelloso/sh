@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Uso básico de la comilla simple.
+# Uso básico de la comilla doble.
 #
 
 nombre="Juan"
