@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Script para sincronizar archivos al servidor de clase.
+# Script para sincronizar archivos al servidor de clase o a casa.
 #
 
 cd ..
