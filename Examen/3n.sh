@@ -11,9 +11,7 @@ while true; do
     else
         echo "Directorio 'entregas' encontrado. Creando carpetas..."
         
-        for i in {1..100}; do
-            mkdir -p "entregas/carpeta $i"
-        done
+        mkdir -p entregas/{1..100}
         
         echo "Se han creado 100 carpetas en el directorio 'entregas'."
         break
