@@ -4,6 +4,8 @@
 # Uso básico de la comilla vuelta.
 #
 
+# shellcheck disable=SC2006
+
 echo "Hoy es `date +%A`"
 
 exit 0
