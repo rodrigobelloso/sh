@@ -7,19 +7,19 @@
 echo "Introduce un valor numérico"
 read -r valor
 
-if [ $valor -lt 10 ]; then
+if [ "$valor" -lt 10 ]; then
   echo "Hace frío"
 
-elif [ $valor -ge 10 ] && [ $valor -le 18 ]; then
+elif [ "$valor" -ge 10 ] && [ "$valor" -le 18 ]; then
   echo "Templadillo"
 
-elif [ $valor -gt 18 ] && [ $valor -lt 25 ]; then
+elif [ "$valor" -gt 18 ] && [ "$valor" -lt 25 ]; then
   echo "Hace muy bueno"
 
-elif [ $valor -ge 25 ] && [ $valor -le 30 ]; then
+elif [ "$valor" -ge 25 ] && [ "$valor" -le 30 ]; then
   echo "Calorcillo"
 
-elif [ $valor -gt 30 ]; then
+elif [ "$valor" -gt 30 ]; then
   echo "Te torras"
 
 else
