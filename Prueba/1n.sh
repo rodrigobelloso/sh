@@ -19,7 +19,7 @@ done
 NUM_LINES=$(wc -l < "$TEMP_FILE")
 echo "Se han recibido $NUM_LINES argumentos."
 
-for (( i=1; i<=$NUM_LINES; i++ )); do
+for (( i=1; i<=NUM_LINES; i++ )); do
 
     NOMBRE=$(head -n $i "$TEMP_FILE" | tail -n 1)
     
