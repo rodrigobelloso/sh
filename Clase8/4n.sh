@@ -9,9 +9,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-resto=$(expr $1 % 2)
+resto=$(( $1 % 2 ))
 
-if [ $resto -eq 0 ]; then
+if [ "$resto" -eq 0 ]; then
     echo "$1 es par."
 else
     echo "$1 es impar."
