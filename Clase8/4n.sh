@@ -14,3 +14,5 @@ if [ $(($1 % 2)) -eq 0 ]; then
 else
     echo "$1 es impar."
 fi
+
+exit 0
