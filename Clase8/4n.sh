@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# Parámetro par o impar.
+#
+
 if [ $# -eq 0 ]; then
     echo "Error: Debe proporcionar un número como parámetro."
     exit 1
