@@ -4,7 +4,12 @@
 # Uso básico de una condicional if-elif-else.
 #
 
-nota=75
+nota=$1
+
+if [ -z "$nota" ]; then
+    echo -n "Introduce la nota (0-100): "
+    read nota
+fi
 
 if [ $nota -ge 90 ]; then
     echo "Sobresaliente"
