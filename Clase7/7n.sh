@@ -3,6 +3,18 @@
 #
 # Adivinar un número con trampa.
 #
+# Parámetros disponibles:
+#  -v          : Activa el modo verboso (muestra mensajes de depuración)
+#  -l          : Activa el registro en un archivo log generado automáticamente
+#  [1-100]     : Establece un número predefinido (modo trampa)
+#
+# Ejemplos de uso:
+#  ./7n.sh                  : Modo normal, número aleatorio
+#  ./7n.sh -v               : Modo verboso, número aleatorio
+#  ./7n.sh -l               : Con registro en archivo, número aleatorio
+#  ./7n.sh 42               : Modo trampa con número 42
+#  ./7n.sh -v -l 42         : Modo verboso, con registro y número predefinido 42
+#
 
 clear
 
