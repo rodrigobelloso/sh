@@ -9,13 +9,13 @@
   ```
 - Al finalizar, tras poner "acabado", mostrará todos los números usados en pantalla, un operador de suma (+), una línea y debajo el resultado de la suma.
 
-```
-n1
-n2
-n3
-+ _________
-resultado
-```
+  ```
+  n1
+  n2
+  n3
+  + _________
+  resultado
+  ```
 
 ## 2. Escribe un script que saque por pantalla la siguiente formación (se muestra demo de ejecución):
 
