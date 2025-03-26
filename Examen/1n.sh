@@ -7,7 +7,7 @@ fi
 
 anterior=$1
 suma=$anterior
-numeros=($anterior)
+numeros=("$anterior")
 echo "Procesando: $anterior"
 shift
 
@@ -18,7 +18,7 @@ while [ $# -gt 0 ]; do
     if [ "$actual" -gt "$anterior" ]; then
         anterior=$actual
         suma=$((suma + actual))
-        numeros+=($actual)
+        numeros+=("$actual")
         shift
     else
         echo "Acabado"
