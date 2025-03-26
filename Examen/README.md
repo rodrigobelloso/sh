@@ -4,9 +4,11 @@
 
 - Procesará un número indeterminado de argumentos en línea de comando, que serán números (no es necesario comprobar que lo son). Continuará haciéndolo mientras el argumento que llegue sea mayor que el que acaba de salir. Al encontrar un argumento igual o menor, termina con el mensaje en pantalla "acabado".
 - Obtendrá la suma total de números, excluyendo el último que hace parar el proceso. Emitirá dicha suma en un fichero llamado resultado txt, en el que pondremos simplemente:
+
   ```
   suma total = <el resultado de la suma>"
   ```
+
 - Al finalizar, tras poner "acabado", mostrará todos los números usados en pantalla, un operador de suma (+), una línea y debajo el resultado de la suma.
 
   ```
