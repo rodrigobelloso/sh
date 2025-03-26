@@ -1,9 +1,8 @@
 #!/bin/bash
 
-echo "Mete un número:"
-read altura
+read -r -p "Introduce un número: " altura
 
-printf "%s\n" "$(printf '*%.0s' $(seq 1 $altura))"
+printf "%s\n" "$(printf '*%.0s' $(seq 1 "${altura}"))"
 
 for ((i=2; i<=altura; i++)); do
     filaActual=$((altura - i + 1))
@@ -14,7 +13,7 @@ for ((i=2; i<=altura; i++)); do
     
     espaciosInternos=$((filaActual - 2))
     
-    if [ $i -lt $altura ]; then
+    if [ $i -lt "${altura}" ]; then
         printf "%*s%s\n" $espaciosInternos "" "*"
     else
         printf "\n"

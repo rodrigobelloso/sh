@@ -1,7 +1,6 @@
 #!/bin/bash
 
-echo "Escribe tu nombre de usuario"
-read -r usuario
+read -r -p "Escribe un nombre de usuario: " usuario
 
 if id "$usuario" &>/dev/null; then
     homeDirectorio=$(eval echo ~"$usuario")
