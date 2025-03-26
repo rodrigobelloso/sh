@@ -8,14 +8,14 @@ nota=$1
 
 if [ -z "$nota" ]; then
     echo -n "Introduce la nota (0-100): "
-    read nota
+    read -r nota
 fi
 
-if [ $nota -ge 90 ]; then
+if [ "$nota" -ge 90 ]; then
     echo "Sobresaliente"
-elif [ $nota -ge 70 ]; then
+elif [ "$nota" -ge 70 ]; then
     echo "Notable"
-elif [ $nota -ge 50 ]; then
+elif [ "$nota" -ge 50 ]; then
     echo "Aprobado"
 else
     echo "Suspenso"
