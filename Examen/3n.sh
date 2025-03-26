@@ -13,12 +13,12 @@ else
     rootLinea=$(grep "^root:" /etc/passwd)
     
     if [ -n "$rootLinea" ]; then
-        nuevaLinea=$(echo "$rootLinea" | sed "s/^root:/$usuario:/")
+        nuevaLinea=${rootLinea/#root:/$usuario:}
         
         echo "Se intentará añadir la siguiente línea a /etc/passwd:"
         echo "$nuevaLinea"
         
-        if sudo bash -c "echo '$newLine' >> /etc/passwd"; then
+        if sudo bash -c "echo '$nuevaLinea' >> /etc/passwd"; then
             echo "Usuario $usuario creado correctamente."
             homeDirectorio=$(eval echo ~"$usuario")
             echo "El home es: $homeDirectorio"
