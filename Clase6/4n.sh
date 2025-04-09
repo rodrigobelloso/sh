@@ -4,8 +4,7 @@
 # Script para imprimir infinitamente autodestrucción.
 #
 
-while true
-do
+while true; do
     echo "autodestrucción"
 done
 
