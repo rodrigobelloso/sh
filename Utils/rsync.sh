@@ -17,7 +17,7 @@ case "$ubicacion" in
         rsync -avz --progress ./ rodrigobo@10.130.1.200:~/sh
         ;;
     "h"|"casa")
-        rsync -avz --progress ./ crow@crow.local:~/sh
+        rsync -avz --progress ./ fraser@fraser.local:~/sh
         ;;
     "o"|"otro")
         read -rp "Introduce el nombre de usuario: " usuario
