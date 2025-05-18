@@ -6,14 +6,14 @@
 # Parámetros disponibles:
 #  -v          : Activa el modo verboso (muestra mensajes de depuración)
 #  -l          : Activa el registro en un archivo log generado automáticamente
-#  [1-100]     : Establece un número predefinido (modo trampa)
+#  -c [1-100]  : Establece un número predefinido (modo trampa)
 #
 # Ejemplos de uso:
 #  ./7n.sh                  : Modo normal, número aleatorio
 #  ./7n.sh -v               : Modo verboso, número aleatorio
 #  ./7n.sh -l               : Con registro en archivo, número aleatorio
-#  ./7n.sh 42               : Modo trampa con número 42
-#  ./7n.sh -v -l 42         : Modo verboso, con registro y número predefinido 42
+#  ./7n.sh -c 42            : Modo trampa con número 42
+#  ./7n.sh -v -l -c 42      : Modo verboso, con registro y número predefinido 42
 #
 
 clear
@@ -22,6 +22,10 @@ trampa=0
 verboso=0
 log=0
 archivoLog=""
+
+# Definición de colores
+NARANJA='\033[38;5;208m'
+RESET='\033[0m'
 
 registrarLog() {
     if [ $log -eq 1 ]; then
@@ -36,24 +40,41 @@ mostrar() {
 
 depurar() {
     if [ $verboso -eq 1 ]; then
-        echo "[DEBUG] $1"
+        echo -e "${NARANJA}[DEBUG]${RESET} $1"
         registrarLog "[DEBUG] $1"
     fi
 }
 
 tiempoInicio=$(date +%s)
 
-for param in "$@"; do
+i=1
+while [ $i -le $# ]; do
+    param="${!i}"
+    
     if [ "$param" = "-v" ]; then
         verboso=1
     elif [ "$param" = "-l" ]; then
         log=1
         archivoLog="$HOME/adivinarElNumero-$(date '+%Y%m%d-%H%M%S').log"
         echo "=== Log de Adivinar el Número - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivoLog"
-    elif [[ "$param" =~ ^[0-9]+$ ]] && [ "$param" -ge 1 ] && [ "$param" -le 100 ]; then
-        numeroSecreto=$param
-        trampa=1
+    elif [ "$param" = "-c" ]; then
+        ((i++))
+        if [ $i -le $# ]; then
+            siguiente="${!i}"
+            if [[ "$siguiente" =~ ^[0-9]+$ ]] && [ "$siguiente" -ge 1 ] && [ "$siguiente" -le 100 ]; then
+                numeroSecreto=$siguiente
+                trampa=1
+            else
+                echo "Error: El número de trampa debe ser un número entre 1 y 100"
+                exit 1
+            fi
+        else
+            echo "Error: El parámetro -c requiere un número"
+            exit 1
+        fi
     fi
+    
+    ((i++))
 done
 
 depurar "Tiempo de inicio: $(date)"
