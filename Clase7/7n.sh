@@ -149,10 +149,7 @@ cargarPartidaGuardada() {
             source "$partidaSave"
             
             if [ $log -eq 1 ]; then
-                # Forzar el uso del nombre de archivo fijo para el log
-                archivoLog="./log.log"
-                local logTempFile="$tempDir/partida_log_$$.log"
-                
+                archivoLog="./log.log"                
                 if [ -f "$tempDir/partida_log_$$.log" ]; then
                     if [ -f "$archivoLog" ]; then
                         mv "$archivoLog" "${archivoLog}.bak"
