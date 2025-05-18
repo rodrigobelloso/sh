@@ -23,7 +23,6 @@ verboso=0
 log=0
 archivoLog=""
 
-# Definición de colores
 NARANJA='\033[38;5;208m'
 RESET='\033[0m'
 
@@ -40,7 +39,7 @@ mostrar() {
 
 depurar() {
     if [ $verboso -eq 1 ]; then
-        echo -e "${NARANJA}[DEBUG]${RESET} $1"
+        echo -e "${NARANJA}[DEBUG]:${RESET} $1"
         registrarLog "[DEBUG] $1"
     fi
 }
