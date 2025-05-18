@@ -71,45 +71,22 @@ log=$log
 archivoLog=$archivoLog
 EOF
     
-    tar -czf "$archivo" -C /tmp "partida.save"
+    if [ $log -eq 1 ] && [ -n "$archivoLog" ] && [ -f "$archivoLog" ]; then
+        cp "$archivoLog" "/tmp/partida_log_$$.log"
+        tar -czf "$archivo" -C /tmp "partida.save" "partida_log_$$.log"
+        rm "/tmp/partida_log_$$.log"
+        
+        depurar "Eliminando archivo de log original: $archivoLog (ya almacenado en el tar)"
+        rm "$archivoLog"
+    else
+        tar -czf "$archivo" -C /tmp "partida.save"
+    fi
+    
     rm "$tempFile"
     
     mostrar "Partida guardada en el archivo comprimido: $archivo"
     depurar "Guardando partida comprimida en: $archivo"
     return 0
-}
-
-cargarPartidaGuardada() {
-    local archivo="$1"
-    depurar "Cargando partida desde archivo comprimido: $archivo"
-    
-    local tempDir="/tmp/partida_temp_$$"
-    mkdir -p "$tempDir"
-    
-    if tar -xzf "$archivo" -C "$tempDir"; then
-        local partidaSave="$tempDir/partida.save"
-        if [ -f "$partidaSave" ]; then
-            # shellcheck source=/dev/null
-            source "$partidaSave"
-            mostrar "Partida cargada desde: $archivo"
-            mostrar "Retomando el juego con $intentos intentos realizados."
-        else
-            echo -e "${ROJO}Error:${RESET} El archivo comprimido no contiene datos de partida válidos"
-            rm -rf "$tempDir"
-            exit 1
-        fi
-    else
-        echo -e "${ROJO}Error:${RESET} No se pudo descomprimir el archivo: $archivo"
-        rm -rf "$tempDir"
-        exit 1
-    fi
-    
-    rm -rf "$tempDir"
-
-    if [ $log -eq 1 ] && [ -z "$archivoLog" ]; then
-        archivoLog="./adivinarElNumero-$(date '+%Y%m%d-%H%M%S').log"
-        echo "=== Log de Adivinar el Número (Continuación) - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivoLog"
-    fi
 }
 
 procesarArgumentos() {
@@ -121,7 +98,7 @@ procesarArgumentos() {
             verboso=1
         elif [ "$param" = "-l" ]; then
             log=1
-            archivoLog="./adivinarElNumero-$(date '+%Y%m%d-%H%M%S').log"
+            archivoLog="./log.log"
             echo "=== Log de Adivinar el Número - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivoLog"
         elif [ "$param" = "-r" ]; then
             ((i++))
@@ -156,6 +133,54 @@ procesarArgumentos() {
         
         ((i++))
     done
+}
+
+cargarPartidaGuardada() {
+    local archivo="$1"
+    depurar "Cargando partida desde archivo comprimido: $archivo"
+    
+    local tempDir="/tmp/partida_temp_$$"
+    mkdir -p "$tempDir"
+    
+    if tar -xzf "$archivo" -C "$tempDir"; then
+        local partidaSave="$tempDir/partida.save"
+        if [ -f "$partidaSave" ]; then
+            # shellcheck source=/dev/null
+            source "$partidaSave"
+            
+            if [ $log -eq 1 ]; then
+                # Forzar el uso del nombre de archivo fijo para el log
+                archivoLog="./log.log"
+                local logTempFile="$tempDir/partida_log_$$.log"
+                
+                if [ -f "$tempDir/partida_log_$$.log" ]; then
+                    if [ -f "$archivoLog" ]; then
+                        mv "$archivoLog" "${archivoLog}.bak"
+                        depurar "Se ha creado una copia de seguridad del log existente: ${archivoLog}.bak"
+                    fi
+                    
+                    cp "$tempDir/partida_log_$$.log" "$archivoLog"
+                    
+                    echo "=== Continuación del juego - $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$archivoLog"
+                else
+                    echo "=== Log de Adivinar el Número (Continuación) - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivoLog"
+                fi
+            fi
+            
+            mostrar "Partida cargada desde: $archivo"
+            mostrar "Retomando el juego con $intentos intentos realizados."
+        else
+            echo -e "${ROJO}Error:${RESET} El archivo comprimido no contiene datos de partida válidos"
+            rm -rf "$tempDir"
+            exit 1
+        fi
+    else
+        echo -e "${ROJO}Error:${RESET} No se pudo descomprimir el archivo: $archivo"
+        rm -rf "$tempDir"
+        exit 1
+    fi
+    
+    rm -rf "$tempDir"
 }
 
 iniciarJuego() {
