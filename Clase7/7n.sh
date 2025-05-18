@@ -7,6 +7,10 @@
 #  -v          : Activa el modo verboso (muestra mensajes de depuración)
 #  -l          : Activa el registro en un archivo log generado automáticamente
 #  -c [1-100]  : Establece un número predefinido (modo trampa)
+#  -r [archivo]: Retoma una partida guardada anteriormente
+#
+# Durante el juego:
+#  Escribe 'guardar' en cualquier momento para guardar la partida actual
 #
 # Ejemplos de uso:
 #  ./7n.sh                  : Modo normal, número aleatorio
@@ -14,6 +18,7 @@
 #  ./7n.sh -l               : Con registro en archivo, número aleatorio
 #  ./7n.sh -c 42            : Modo trampa con número 42
 #  ./7n.sh -v -l -c 42      : Modo verboso, con registro y número predefinido 42
+#  ./7n.sh -r partida.save  : Retoma la partida guardada en el archivo partida.save
 #
 
 clear
@@ -22,6 +27,8 @@ trampa=0
 verboso=0
 log=0
 archivoLog=""
+archivoGuardado=""
+cargarPartida=0
 
 NARANJA='\033[38;5;208m'
 RESET='\033[0m'
@@ -44,6 +51,64 @@ depurar() {
     fi
 }
 
+guardarPartida() {
+    local archivo="$1"
+    local tempFile="/tmp/partida.save"
+    
+    if [ -z "$archivo" ]; then
+        archivo="partida-$(date '+%Y%m%d-%H%M%S').tar.gz"
+    elif [[ ! "$archivo" =~ \.tar\.gz$ ]]; then
+        archivo="${archivo}.tar.gz"
+    fi
+    
+    cat > "$tempFile" << EOF
+numeroSecreto=$numeroSecreto
+intentos=$intentos
+trampa=$trampa
+verboso=$verboso
+log=$log
+archivoLog=$archivoLog
+EOF
+    
+    tar -czf "$archivo" -C /tmp "partida.save"
+    rm "$tempFile"
+    
+    mostrar "Partida guardada en el archivo comprimido: $archivo"
+    depurar "Guardando partida comprimida en: $archivo"
+    return 0
+}
+
+cargarPartidaGuardada() {
+    local archivo="$1"
+    depurar "Cargando partida desde archivo comprimido: $archivo"
+    
+    local tempDir="/tmp/partida_temp_$$"
+    mkdir -p "$tempDir"
+    
+    if tar -xzf "$archivo" -C "$tempDir"; then
+        if [ -f "$tempDir/partida.save" ]; then
+            source "$tempDir/partida.save"
+            mostrar "Partida cargada desde: $archivo"
+            mostrar "Retomando el juego con $intentos intentos realizados."
+        else
+            echo "Error: El archivo comprimido no contiene datos de partida válidos"
+            rm -rf "$tempDir"
+            exit 1
+        fi
+    else
+        echo "Error: No se pudo descomprimir el archivo: $archivo"
+        rm -rf "$tempDir"
+        exit 1
+    fi
+    
+    rm -rf "$tempDir"
+
+    if [ $log -eq 1 ] && [ -z "$archivoLog" ]; then
+        archivoLog="$HOME/adivinarElNumero-$(date '+%Y%m%d-%H%M%S').log"
+        echo "=== Log de Adivinar el Número (Continuación) - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivoLog"
+    fi
+}
+
 tiempoInicio=$(date +%s)
 
 i=1
@@ -56,6 +121,20 @@ while [ $i -le $# ]; do
         log=1
         archivoLog="$HOME/adivinarElNumero-$(date '+%Y%m%d-%H%M%S').log"
         echo "=== Log de Adivinar el Número - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivoLog"
+    elif [ "$param" = "-r" ]; then
+        ((i++))
+        if [ $i -le $# ]; then
+            archivoGuardado="${!i}"
+            if [ -f "$archivoGuardado" ]; then
+                cargarPartida=1
+            else
+                echo "Error: No se encuentra el archivo de partida guardada: $archivoGuardado"
+                exit 1
+            fi
+        else
+            echo "Error: El parámetro -r requiere un nombre de archivo"
+            exit 1
+        fi
     elif [ "$param" = "-c" ]; then
         ((i++))
         if [ $i -le $# ]; then
@@ -81,28 +160,51 @@ depurar "Tiempo de inicio: $(date)"
 [ $log -eq 1 ] && depurar "Registro activado en: $archivoLog"
 [ $trampa -eq 1 ] && depurar "Modo trampa activado con número: $numeroSecreto"
 
+if [ $cargarPartida -eq 1 ]; then
+    cargarPartidaGuardada "$archivoGuardado"
+fi
+
 if [ -z "$numeroSecreto" ]; then
     numeroSecreto=$((RANDOM % 100 + 1))
     depurar "Generando número aleatorio: $numeroSecreto"
 else
-    depurar "Usando número predefinido: $numeroSecreto"
+    depurar "Usando número: $numeroSecreto"
 fi
 
 mostrar "¡Bienvenido al juego de adivinar el número!"
 mostrar "Estoy pensando en un número entre 1 y 100..."
 
-intentos=0
+if [ $cargarPartida -eq 1 ]; then
+    mostrar "Has adivinado durante $intentos intentos hasta ahora."
+fi
+
+intentos=${intentos:-0}
 adivinado=0
 
 while [ $adivinado -eq 0 ]; do
     ((intentos++))
     depurar "Iniciando intento número $intentos"
     
-    echo -n "Intento $intentos: Introduce un número: "
+    echo -n "Intento $intentos: Introduce un número (o escribe 'guardar' para guardar la partida): "
     read -r respuesta
     
     registrarLog "Intento $intentos: Usuario ha introducido: '$respuesta'"
     depurar "Usuario ha introducido: '$respuesta'"
+
+    if [ "$respuesta" = "guardar" ]; then
+    echo -n "Introduce el nombre del archivo para guardar (o pulsa Enter para usar el nombre por defecto): "
+    read -r nombreGuardado
+    guardarPartida "$nombreGuardado"
+    nombreFinal="$nombreGuardado"
+    if [ -z "$nombreFinal" ]; then
+        nombreFinal="partida-$(date '+%Y%m%d-%H%M%S').tar.gz"
+    elif [[ ! "$nombreFinal" =~ \.tar\.gz$ ]]; then
+        nombreFinal="${nombreFinal}.tar.gz"
+    fi
+    mostrar "Juego guardado. Puedes retomarlo más tarde con el comando: ./7n.sh -r $nombreFinal"
+    depurar "Finalizando el juego después de guardar"
+    exit 0
+    fi
     
     if ! [[ "$respuesta" =~ ^[0-9]+$ ]]; then
         mostrar "Por favor, introduce un número válido."
