@@ -6,7 +6,7 @@
 - Obtendrá la suma total de números, excluyendo el último que hace parar el proceso. Emitirá dicha suma en un fichero llamado resultado txt, en el que pondremos simplemente:
 
   ```
-  suma total = <el resultado de la suma>"
+  suma total = <el resultado de la suma>
   ```
 
 - Al finalizar, tras poner "acabado", mostrará todos los números usados en pantalla, un operador de suma (+), una línea y debajo el resultado de la suma.
@@ -30,7 +30,10 @@ Mete un número: 4
    *
 ```
 
-Se valorarán realizaciones parciales: +3,33 forma triangular similar aunque no tenga hueco interior, +3,33 estructura de programa correcta para el resultado aunque la formación en pantalla no sea correcta (esto es número de bucles y/o condicionales y estructura entre ellos)
+Se valorarán realizaciones parciales:
+
+- +3,33 forma triangular similar aunque no tenga hueco interior.
+- +3,33 estructura de programa correcta para el resultado aunque la formación en pantalla no sea correcta (esto es número de bucles y/o condicionales y estructura entre ellos)
 
 ## 3. Escribe un script:
 
