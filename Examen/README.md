@@ -32,8 +32,8 @@ Mete un número: 4
 
 Se valorarán realizaciones parciales:
 
-- +3,33 forma triangular similar aunque no tenga hueco interior.
-- +3,33 estructura de programa correcta para el resultado aunque la formación en pantalla no sea correcta (esto es número de bucles y/o condicionales y estructura entre ellos)
+- **_+3,33:_** Produce una forma triangular similar aunque no tenga hueco interior.
+- **_+3,33:_** Posee una estructura de programa correcta para el resultado aunque la formación en pantalla no sea correcta (esto es número de bucles y/o condicionales y estructura entre ellos)
 
 ## 3. Escribe un script:
 
