@@ -18,8 +18,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly TEMP_DIR="$(mktemp -d)"
+readonly TEMP_DIR
+TEMP_DIR="$(mktemp -d)"
 readonly MAX_ATTEMPTS=100
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
@@ -308,7 +308,7 @@ cargar_partida_guardada() {
         while [[ $intentos_password -lt $MAX_SAVE_ATTEMPTS ]]; do
             ((intentos_password++))
             echo -n "Contraseña de desencriptación (intento $intentos_password/$MAX_SAVE_ATTEMPTS): "
-            read -s clave
+            read -rs clave
             echo
             
             if desencriptar_archivo "$partida_enc" "$partida_dec" "$clave"; then
@@ -350,7 +350,7 @@ cargar_partida_guardada() {
             log_habilitado) log_habilitado="$valor" ;;
             archivo_log) archivo_log="$valor" ;;
         esac
-    done < "$partida_dec" || {¶
+    done < "$partida_dec" || { 
         echo -e "${ROJO}Error:${RESET} No se pudieron cargar los datos de partida" >&2
         return 1
     }
@@ -470,10 +470,10 @@ iniciar_juego() {
                 read -r respuesta_password
                 if [[ "$respuesta_password" =~ ^[sS]$ ]]; then
                     echo -n "Contraseña: "
-                    read -s clave_guardado
+                    read -rs clave_guardado
                     echo
                     echo -n "Confirmar: "
-                    read -s confirm_password
+                    read -rs confirm_password
                     echo
                     if [[ "$clave_guardado" != "$confirm_password" ]]; then
                         mostrar "${ROJO}Contraseñas no coinciden. Usando clave por defecto${RESET}"
