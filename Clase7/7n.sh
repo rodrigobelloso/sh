@@ -18,7 +18,12 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly TEMP_DIR="$(mktemp -d)"
+TEMP_DIR_VALUE="$(mktemp -d)"
+if [[ ! -d "$TEMP_DIR_VALUE" ]]; then
+    echo "Error: No se pudo crear directorio temporal" >&2
+    exit 1
+fi
+readonly TEMP_DIR="$TEMP_DIR_VALUE"
 readonly MAX_ATTEMPTS=100
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
