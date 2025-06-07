@@ -18,8 +18,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly TEMP_DIR
-TEMP_DIR="$(mktemp -d)"
+readonly TEMP_DIR="$(mktemp -d)"
 readonly MAX_ATTEMPTS=100
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
