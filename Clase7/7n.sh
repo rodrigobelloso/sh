@@ -359,11 +359,6 @@ loadSavedGame() {
             verbose) verbose="$value" ;;
             logEnabled) logEnabled="$value" ;;
             logFile) logFile="$value" ;;
-            # Legacy compatibility
-            secret_number) secretNumber="$value" ;;
-            cheat_mode) cheatMode="$value" ;;
-            log_enabled) logEnabled="$value" ;;
-            log_file) logFile="$value" ;;
         esac
     done < "$gameDec" || { 
         echo -e "${RED}Error:${RESET} Could not load game data" >&2
