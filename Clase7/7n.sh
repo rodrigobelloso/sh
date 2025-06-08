@@ -565,7 +565,11 @@ startGame() {
     minutes=$((totalTime / 60))
     seconds=$((totalTime % 60))
     
-    display "Game time: ${minutes}m ${seconds}s"
+    if [[ $minutes -gt 0 ]]; then
+        display "Game time: ${minutes}m ${seconds}s"
+    else
+        display "Game time: ${seconds}s"
+    fi
     
     if [[ $cheatMode -eq 1 ]]; then
         display "${ORANGE}Cheat mode used${RESET}"
