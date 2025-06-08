@@ -540,7 +540,7 @@ startGame() {
         fi
         
         if ! validateNumber "$response"; then
-            display "Enter a valid number between 1 and 100, 'save'/'s', or 'quit'/'q'"
+            display "Enter a valid number between 1 and 100, 'save', or 'quit'"
             ((attempts--))
             continue
         fi

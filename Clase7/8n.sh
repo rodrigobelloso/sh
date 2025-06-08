@@ -16,11 +16,10 @@ readonly RESET='\033[0m'
 if [[ $# -lt 2 ]]; then
     echo "Usage:"
     echo "  Para desencriptar: $0 decrypt <ngsave_file> [password]"
-    echo "  Para encriptar: $0 encrypt <save_file> <password>"
+    echo "  Para encriptar: $0 encrypt <save_file> [password]"
     echo "  Para re-encriptar: $0 reencrypt <ngsave_file> <old_password> <new_password>"
     echo ""
-    echo "Nota: Si no se proporciona contraseña para desencriptar un archivo .ngsave,"
-    echo "      se utilizará la clave por defecto del sistema."
+    echo "Nota: Si no se proporciona contraseña, se utilizará la clave por defecto del sistema."
     exit 1
 fi
 
@@ -60,9 +59,9 @@ validateNgSaveFile() {
 
 case "$ACTION" in
     "encrypt")
-        if [[ $# -ne 3 ]]; then
-            echo -e "${RED}Error:${RESET} Para encriptar se necesitan exactamente 3 argumentos"
-            echo "Usage: $0 encrypt <save_file> <password>"
+        if [[ $# -gt 3 ]]; then
+            echo -e "${RED}Error:${RESET} Demasiados argumentos para encriptar"
+            echo "Usage: $0 encrypt <save_file> [password]"
             exit 1
         fi
         ;;
@@ -151,6 +150,13 @@ case "$ACTION" in
         if [[ ! -f "$SAVE_FILE" ]]; then
             echo -e "${RED}Error:${RESET} El archivo $SAVE_FILE no existe"
             exit 1
+        fi
+        
+        if [[ -z "$PASSWORD" ]]; then
+            PASSWORD=$(generateDefaultKey)
+            echo "Usando clave por defecto del sistema..."
+        else
+            echo "Usando contraseña proporcionada..."
         fi
         
         cp "$SAVE_FILE" "$TEMP_DIR/game.save"
