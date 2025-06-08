@@ -1,18 +1,18 @@
 #!/bin/bash
 
 #
-# Adivinar un número.
+# Number guessr.
 #
-# Parámetros disponibles:
-#  -v          : Activa el modo verboso (muestra mensajes de depuración)
-#  -l          : Activa el registro en un archivo log generado automáticamente
-#  -c [1-100]  : Establece un número predefinido (modo trampa)
-#  -r [archivo]: Retoma una partida guardada anteriormente
-#  -p [clave]  : Establece una clave de encriptación personalizada
-#  -h          : Muestra ayuda
+# Available parameters:
+#  -v          : Activates verbose mode (shows debug messages)
+#  -l          : Activates logging to an automatically generated log file
+#  -c [1-100]  : Sets a predefined number (cheat mode)
+#  -r [file]   : Resumes a previously saved game
+#  -p [key]    : Sets a custom encryption key
+#  -h          : Shows help
 #
-# Durante el juego:
-#  Escribe 'guardar' en cualquier momento para guardar la partida actual
+# During the game:
+#  Type 'save' at any time to save the current game
 #
 
 set -euo pipefail
@@ -20,7 +20,7 @@ IFS=$'\n\t'
 
 TEMP_DIR_VALUE="$(mktemp -d)"
 if [[ ! -d "$TEMP_DIR_VALUE" ]]; then
-    echo "Error: No se pudo crear directorio temporal" >&2
+    echo "Error: Could not create temporary directory" >&2
     exit 1
 fi
 readonly TEMP_DIR="$TEMP_DIR_VALUE"
@@ -28,112 +28,112 @@ readonly MAX_ATTEMPTS=100
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
 
-readonly NARANJA='\033[38;5;208m'
-readonly ROJO='\033[1;31m'
-readonly VERDE='\033[1;32m'
+readonly ORANGE='\033[38;5;208m'
+readonly RED='\033[1;31m'
+readonly GREEN='\033[1;32m'
 readonly RESET='\033[0m'
 
-trampa=0
-verboso=0
-log_habilitado=0
-archivo_log=""
-archivo_guardado=""
-cargar_partida=0
-clave_encriptacion=""
-numero_secreto=""
-intentos=0
+cheatMode=0
+verbose=0
+logEnabled=0
+logFile=""
+savedFile=""
+loadGame=0
+encryptionKey=""
+secretNumber=""
+attempts=0
 
-trap 'cleanup_exit' EXIT INT TERM
+trap 'cleanupExit' EXIT INT TERM
 
-cleanup_exit() {
-    local exit_code=$?
+cleanupExit() {
+    local exitCode=$?
     if [[ -d "$TEMP_DIR" ]]; then
         rm -rf "$TEMP_DIR" 2>/dev/null || true
     fi
-    exit $exit_code
+    exit $exitCode
 }
 
-mostrar_ayuda() {
+showHelp() {
     cat << EOF
-Uso: $0 [OPCIONES]
+Usage: $0 [OPTIONS]
 
-OPCIONES:
-  -v              Activa el modo verboso
-  -l              Activa el registro en archivo log
-  -c [1-100]      Establece un número predefinido (modo trampa)
-  -r [archivo]    Retoma una partida guardada
-  -p [clave]      Establece una clave de encriptación personalizada
-  -h              Muestra esta ayuda
+OPTIONS:
+  -v              Activates verbose mode
+  -l              Activates file logging
+  -c [1-100]      Sets a predefined number (cheat mode)
+  -r [file]       Resumes a saved game
+  -p [key]        Sets a custom encryption key
+  -h              Shows this help
 
-EJEMPLOS:
-  $0                    # Modo normal
-  $0 -v -l              # Modo verboso con log
-  $0 -c 42              # Modo trampa con número 42
-  $0 -r partida.save    # Retomar partida guardada
+EXAMPLES:
+  $0                    # Normal mode
+  $0 -v -l              # Verbose mode with logging
+  $0 -c 42              # Cheat mode with number 42
+  $0 -r game.save       # Resume saved game
 
-Durante el juego, escribe 'guardar' para guardar la partida actual.
+During the game, type 'save' to save the current game.
 EOF
 }
 
-log_mensaje() {
-    local mensaje="$1"
+logMessage() {
+    local message="$1"
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
-    if [[ $log_habilitado -eq 1 && -n "$archivo_log" ]]; then
-        printf "[%s] %s\n" "$timestamp" "$mensaje" >> "$archivo_log" 2>/dev/null || true
+    if [[ $logEnabled -eq 1 && -n "$logFile" ]]; then
+        printf "[%s] %s\n" "$timestamp" "$message" >> "$logFile" 2>/dev/null || true
     fi
 }
 
-mostrar() {
-    local mensaje="$1"
-    echo -e "$mensaje"
-    log_mensaje "$mensaje"
+display() {
+    local message="$1"
+    echo -e "$message"
+    logMessage "$message"
 }
 
-depurar() {
-    if [[ $verboso -eq 1 ]]; then
-        local mensaje="${NARANJA}[DEBUG]:${RESET} $1"
-        echo -e "$mensaje" >&2
-        log_mensaje "[DEBUG] $1"
+debug() {
+    if [[ $verbose -eq 1 ]]; then
+        local message="${ORANGE}[DEBUG]:${RESET} $1"
+        echo -e "$message" >&2
+        logMessage "[DEBUG] $1"
     fi
 }
 
-verificar_dependencias() {
-    local dependencias=("openssl" "tar" "gzip")
-    local faltantes=()
+verifyDependencies() {
+    local dependencies=("openssl" "tar" "gzip")
+    local missing=()
     
-    for dep in "${dependencias[@]}"; do
+    for dep in "${dependencies[@]}"; do
         if ! command -v "$dep" &> /dev/null; then
-            faltantes+=("$dep")
+            missing+=("$dep")
         fi
     done
     
-    if [[ ${#faltantes[@]} -gt 0 ]]; then
-        echo -e "${ROJO}Error:${RESET} Dependencias faltantes: ${faltantes[*]}" >&2
-        echo "Instala los paquetes requeridos e intenta de nuevo." >&2
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "${RED}Error:${RESET} Missing dependencies: ${missing[*]}" >&2
+        echo "Install the required packages and try again." >&2
         exit 1
     fi
 }
 
-generar_checksum() {
-    local archivo="$1"
+generateChecksum() {
+    local file="$1"
     
-    if [[ ! -f "$archivo" ]]; then
-        echo -e "${ROJO}Error:${RESET} Archivo no encontrado: $archivo" >&2
+    if [[ ! -f "$file" ]]; then
+        echo -e "${RED}Error:${RESET} File not found: $file" >&2
         return 1
     fi
     
     if command -v sha256sum &> /dev/null; then
-        sha256sum "$archivo" | cut -d' ' -f1
+        sha256sum "$file" | cut -d' ' -f1
     elif command -v shasum &> /dev/null; then
-        shasum -a 256 "$archivo" | cut -d' ' -f1
+        shasum -a 256 "$file" | cut -d' ' -f1
     else
-        openssl sha256 "$archivo" | awk '{print $NF}'
+        openssl sha256 "$file" | awk '{print $NF}'
     fi
 }
 
-validar_numero() {
+validateNumber() {
     local input="$1"
     
     if [[ ! "$input" =~ ^[0-9]+$ ]]; then
@@ -147,400 +147,405 @@ validar_numero() {
     return 0
 }
 
-encriptar_archivo() {
-    local archivo_entrada="$1"
-    local archivo_salida="$2"
-    local clave="$3"
+encryptFile() {
+    local inputFile="$1"
+    local outputFile="$2"
+    local key="$3"
     
-    depurar "Encriptando: $archivo_entrada -> $archivo_salida"
+    debug "Encrypting: $inputFile -> $outputFile"
 
     if openssl enc -aes-256-gcm -help &>/dev/null; then
         openssl enc -aes-256-gcm -salt -pbkdf2 -iter "$ENCRYPTION_ROUNDS" \
-                -in "$archivo_entrada" -out "$archivo_salida" -k "$clave" 2>/dev/null
+                -in "$inputFile" -out "$outputFile" -k "$key" 2>/dev/null
     else
         openssl enc -aes-256-cbc -salt -pbkdf2 -iter "$ENCRYPTION_ROUNDS" \
-                -in "$archivo_entrada" -out "$archivo_salida" -k "$clave" 2>/dev/null
+                -in "$inputFile" -out "$outputFile" -k "$key" 2>/dev/null
     fi
 }
 
-desencriptar_archivo() {
-    local archivo_entrada="$1"
-    local archivo_salida="$2"
-    local clave="$3"
+decryptFile() {
+    local inputFile="$1"
+    local outputFile="$2"
+    local key="$3"
     
-    depurar "Desencriptando: $archivo_entrada -> $archivo_salida"
+    debug "Decrypting: $inputFile -> $outputFile"
 
     if openssl enc -aes-256-gcm -d -salt -pbkdf2 -iter "$ENCRYPTION_ROUNDS" \
-            -in "$archivo_entrada" -out "$archivo_salida" -k "$clave" 2>/dev/null; then
+            -in "$inputFile" -out "$outputFile" -k "$key" 2>/dev/null; then
         return 0
     elif openssl enc -aes-256-cbc -d -salt -pbkdf2 -iter "$ENCRYPTION_ROUNDS" \
-            -in "$archivo_entrada" -out "$archivo_salida" -k "$clave" 2>/dev/null; then
+            -in "$inputFile" -out "$outputFile" -k "$key" 2>/dev/null; then
         return 0
     else
         return 1
     fi
 }
 
-generar_clave_default() {
-    local sistema_info
-    sistema_info=$(uname -a 2>/dev/null || echo "unknown")
-    local user_info
-    user_info=$(id -u 2>/dev/null || echo "0")
+generateDefaultKey() {
+    local systemInfo
+    systemInfo=$(uname -a 2>/dev/null || echo "unknown")
+    local userInfo
+    userInfo=$(id -u 2>/dev/null || echo "0")
     
-    printf "%s|%s|%s" "$sistema_info" "$user_info" "$(basename "$0")" | \
+    printf "%s|%s|%s" "$systemInfo" "$userInfo" "$(basename "$0")" | \
         openssl sha256 | awk '{print $NF}'
 }
 
-validar_archivo_guardado() {
-    local archivo="$1"
+validateSavedFile() {
+    local file="$1"
 
-    if [[ ! -f "$archivo" ]]; then
-        echo -e "${ROJO}Error:${RESET} Archivo no encontrado: $archivo" >&2
+    if [[ ! -f "$file" ]]; then
+        echo -e "${RED}Error:${RESET} File not found: $file" >&2
         return 1
     fi
 
-    if [[ ! -r "$archivo" ]]; then
-        echo -e "${ROJO}Error:${RESET} Sin permisos de lectura: $archivo" >&2
+    if [[ ! -r "$file" ]]; then
+        echo -e "${RED}Error:${RESET} No read permissions: $file" >&2
         return 1
     fi
 
-    if ! tar -tzf "$archivo" &>/dev/null; then
-        echo -e "${ROJO}Error:${RESET} Archivo corrupto o formato inválido: $archivo" >&2
+    if ! tar -tzf "$file" &>/dev/null; then
+        echo -e "${RED}Error:${RESET} Corrupted file or invalid format: $file" >&2
         return 1
     fi
     
     return 0
 }
 
-guardar_partida() {
-    local nombre_archivo="$1"
-    local clave_personalizada="$2"
-    local temp_partida="$TEMP_DIR/partida.save"
-    local temp_checksum="$TEMP_DIR/partida.checksum"
-    local temp_partida_enc="$TEMP_DIR/partida_enc.save"
-    local temp_checksum_enc="$TEMP_DIR/partida_checksum_enc.save"
+saveGame() {
+    local filename="$1"
+    local customKey="$2"
+    local tempGame="$TEMP_DIR/game.save"
+    local tempChecksum="$TEMP_DIR/game.checksum"
+    local tempGameEnc="$TEMP_DIR/game_enc.save"
+    local tempChecksumEnc="$TEMP_DIR/game_checksum_enc.save"
     
-    if [[ -z "$nombre_archivo" ]]; then
-        nombre_archivo="partida-$(date '+%Y%m%d-%H%M%S').tar.gz"
-    elif [[ ! "$nombre_archivo" =~ \.tar\.gz$ ]]; then
-        nombre_archivo="${nombre_archivo}.tar.gz"
+    if [[ -z "$filename" ]]; then
+        filename="game-$(date '+%Y%m%d-%H%M%S').tar.gz"
+    elif [[ ! "$filename" =~ \.tar\.gz$ ]]; then
+        filename="${filename}.tar.gz"
     fi
     
-    if [[ "$nombre_archivo" =~ [/\\] ]]; then
-        echo -e "${ROJO}Error:${RESET} Nombre de archivo inválido" >&2
+    if [[ "$filename" =~ [/\\] ]]; then
+        echo -e "${RED}Error:${RESET} Invalid filename" >&2
         return 1
     fi
 
-    cat > "$temp_partida" << EOF
-numero_secreto=$numero_secreto
-intentos=$intentos
-trampa=$trampa
-verboso=$verboso
-log_habilitado=$log_habilitado
-archivo_log=$archivo_log
+    cat > "$tempGame" << EOF
+secretNumber=$secretNumber
+attempts=$attempts
+cheatMode=$cheatMode
+verbose=$verbose
+logEnabled=$logEnabled
+logFile=$logFile
 timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 version=2.0
 EOF
 
     local checksum
-    checksum=$(generar_checksum "$temp_partida")
+    checksum=$(generateChecksum "$tempGame")
     if [[ -z "$checksum" ]]; then
-        echo -e "${ROJO}Error:${RESET} No se pudo generar checksum" >&2
+        echo -e "${RED}Error:${RESET} Could not generate checksum" >&2
         return 1
     fi
     
-    echo "$checksum" > "$temp_checksum"
-    depurar "Checksum generado: $checksum"
+    echo "$checksum" > "$tempChecksum"
+    debug "Generated checksum: $checksum"
 
-    local clave="${clave_personalizada:-${clave_encriptacion:-$(generar_clave_default)}}"
+    local key="${customKey:-${encryptionKey:-$(generateDefaultKey)}}"
 
-    if ! encriptar_archivo "$temp_partida" "$temp_partida_enc" "$clave"; then
-        echo -e "${ROJO}Error:${RESET} Fallo en encriptación de partida" >&2
+    if ! encryptFile "$tempGame" "$tempGameEnc" "$key"; then
+        echo -e "${RED}Error:${RESET} Game encryption failed" >&2
         return 1
     fi
     
-    if ! encriptar_archivo "$temp_checksum" "$temp_checksum_enc" "$clave"; then
-        echo -e "${ROJO}Error:${RESET} Fallo en encriptación de checksum" >&2
+    if ! encryptFile "$tempChecksum" "$tempChecksumEnc" "$key"; then
+        echo -e "${RED}Error:${RESET} Checksum encryption failed" >&2
         return 1
     fi
 
-    local archivos_tar=("partida_enc.save" "partida_checksum_enc.save")
+    local tarFiles=("game_enc.save" "game_checksum_enc.save")
 
-    if [[ $log_habilitado -eq 1 && -n "$archivo_log" && -f "$archivo_log" ]]; then
-        cp "$archivo_log" "$TEMP_DIR/partida_log.log"
-        archivos_tar+=("partida_log.log")
+    if [[ $logEnabled -eq 1 && -n "$logFile" && -f "$logFile" ]]; then
+        cp "$logFile" "$TEMP_DIR/game_log.log"
+        tarFiles+=("game_log.log")
     fi
     
-    if tar -czf "$nombre_archivo" -C "$TEMP_DIR" "${archivos_tar[@]}" 2>/dev/null; then
-        mostrar "${VERDE}Partida guardada en:${RESET} $nombre_archivo"
+    if tar -czf "$filename" -C "$TEMP_DIR" "${tarFiles[@]}" 2>/dev/null; then
+        display "${GREEN}Game saved to:${RESET} $filename"
         return 0
     else
-        echo -e "${ROJO}Error:${RESET} No se pudo crear el archivo de guardado" >&2
+        echo -e "${RED}Error:${RESET} Could not create save file" >&2
         return 1
     fi
 }
 
-cargar_partida_guardada() {
-    local archivo="$1"
-    local temp_dir_partida="$TEMP_DIR/load_$$"
+loadSavedGame() {
+    local file="$1"
+    local tempDirGame="$TEMP_DIR/load_$$"
     
-    if ! validar_archivo_guardado "$archivo"; then
+    if ! validateSavedFile "$file"; then
         return 1
     fi
     
-    mkdir -p "$temp_dir_partida"
+    mkdir -p "$tempDirGame"
 
-    if ! tar -xzf "$archivo" -C "$temp_dir_partida" 2>/dev/null; then
-        echo -e "${ROJO}Error:${RESET} No se pudo extraer el archivo" >&2
+    if ! tar -xzf "$file" -C "$tempDirGame" 2>/dev/null; then
+        echo -e "${RED}Error:${RESET} Could not extract file" >&2
         return 1
     fi
     
-    local partida_enc="$temp_dir_partida/partida_enc.save"
-    local checksum_enc="$temp_dir_partida/partida_checksum_enc.save"
-    local partida_dec="$TEMP_DIR/partida_dec.save"
-    local checksum_dec="$TEMP_DIR/checksum_dec.save"
+    local gameEnc="$tempDirGame/game_enc.save"
+    local checksumEnc="$tempDirGame/game_checksum_enc.save"
+    local gameDec="$TEMP_DIR/game_dec.save"
+    local checksumDec="$TEMP_DIR/checksum_dec.save"
 
-    if [[ ! -f "$partida_enc" || ! -f "$checksum_enc" ]]; then
-        echo -e "${ROJO}Error:${RESET} Archivo de guardado incompleto" >&2
+    if [[ ! -f "$gameEnc" || ! -f "$checksumEnc" ]]; then
+        echo -e "${RED}Error:${RESET} Incomplete save file" >&2
         return 1
     fi
 
-    local clave="${clave_encriptacion:-$(generar_clave_default)}"
-    local intentos_password=0
+    local key="${encryptionKey:-$(generateDefaultKey)}"
+    local passwordAttempts=0
 
-    if ! desencriptar_archivo "$partida_enc" "$partida_dec" "$clave"; then
-        while [[ $intentos_password -lt $MAX_SAVE_ATTEMPTS ]]; do
-            ((intentos_password++))
-            echo -n "Contraseña de desencriptación (intento $intentos_password/$MAX_SAVE_ATTEMPTS): "
-            read -rs clave
+    if ! decryptFile "$gameEnc" "$gameDec" "$key"; then
+        while [[ $passwordAttempts -lt $MAX_SAVE_ATTEMPTS ]]; do
+            ((passwordAttempts++))
+            echo -n "Decryption password (attempt $passwordAttempts/$MAX_SAVE_ATTEMPTS): "
+            read -rs key
             echo
             
-            if desencriptar_archivo "$partida_enc" "$partida_dec" "$clave"; then
+            if decryptFile "$gameEnc" "$gameDec" "$key"; then
                 break
-            elif [[ $intentos_password -lt $MAX_SAVE_ATTEMPTS ]]; then
-                echo -e "${ROJO}Contraseña incorrecta${RESET}"
+            elif [[ $passwordAttempts -lt $MAX_SAVE_ATTEMPTS ]]; then
+                echo -e "${RED}Incorrect password${RESET}"
             fi
         done
         
-        if [[ $intentos_password -eq $MAX_SAVE_ATTEMPTS ]]; then
-            echo -e "${ROJO}Error:${RESET} Máximo de intentos alcanzado" >&2
+        if [[ $passwordAttempts -eq $MAX_SAVE_ATTEMPTS ]]; then
+            echo -e "${RED}Error:${RESET} Maximum attempts reached" >&2
             return 1
         fi
     fi
     
-    if ! desencriptar_archivo "$checksum_enc" "$checksum_dec" "$clave"; then
-        echo -e "${ROJO}Error:${RESET} No se pudo desencriptar checksum" >&2
+    if ! decryptFile "$checksumEnc" "$checksumDec" "$key"; then
+        echo -e "${RED}Error:${RESET} Could not decrypt checksum" >&2
         return 1
     fi
     
-    local checksum_esperado checksum_actual
-    checksum_esperado=$(cat "$checksum_dec" 2>/dev/null)
-    checksum_actual=$(generar_checksum "$partida_dec")
+    local expectedChecksum actualChecksum
+    expectedChecksum=$(cat "$checksumDec" 2>/dev/null)
+    actualChecksum=$(generateChecksum "$gameDec")
     
-    if [[ "$checksum_esperado" != "$checksum_actual" ]]; then
-        echo -e "${ROJO}Error:${RESET} Archivo corrupto - checksum no coincide" >&2
-        depurar "Esperado: $checksum_esperado, Actual: $checksum_actual"
+    if [[ "$expectedChecksum" != "$actualChecksum" ]]; then
+        echo -e "${RED}Error:${RESET} Corrupted file - checksum mismatch" >&2
+        debug "Expected: $expectedChecksum, Actual: $actualChecksum"
         return 1
     fi
     
-    mostrar "${VERDE}Verificación de integridad exitosa${RESET}"
+    display "${GREEN}Integrity verification successful${RESET}"
 
-    while IFS='=' read -r clave valor; do
-        case "$clave" in
-            numero_secreto) numero_secreto="$valor" ;;
-            intentos) intentos="$valor" ;;
-            trampa) trampa="$valor" ;;
-            verboso) verboso="$valor" ;;
-            log_habilitado) log_habilitado="$valor" ;;
-            archivo_log) archivo_log="$valor" ;;
+    while IFS='=' read -r varKey value; do
+        case "$varKey" in
+            secretNumber) secretNumber="$value" ;;
+            attempts) attempts="$value" ;;
+            cheatMode) cheatMode="$value" ;;
+            verbose) verbose="$value" ;;
+            logEnabled) logEnabled="$value" ;;
+            logFile) logFile="$value" ;;
+            # Legacy compatibility
+            secret_number) secretNumber="$value" ;;
+            cheat_mode) cheatMode="$value" ;;
+            log_enabled) logEnabled="$value" ;;
+            log_file) logFile="$value" ;;
         esac
-    done < "$partida_dec" || { 
-        echo -e "${ROJO}Error:${RESET} No se pudieron cargar los datos de partida" >&2
+    done < "$gameDec" || { 
+        echo -e "${RED}Error:${RESET} Could not load game data" >&2
         return 1
     }
 
-    if [[ $log_habilitado -eq 1 && -f "$temp_dir_partida/partida_log.log" ]]; then
-        archivo_log="./log_continuacion.log"
-        cp "$temp_dir_partida/partida_log.log" "$archivo_log"
-        echo "=== Continuación - $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$archivo_log"
+    if [[ $logEnabled -eq 1 && -f "$tempDirGame/game_log.log" ]]; then
+        logFile="./continuation_log.log"
+        cp "$tempDirGame/game_log.log" "$logFile"
+        echo "=== Continuation - $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$logFile"
     fi
     
-    mostrar "${VERDE}Partida cargada desde:${RESET} $archivo"
-    mostrar "Continuando con $intentos intentos realizados"
+    display "${GREEN}Game loaded from:${RESET} $file"
+    display "Continuing with $attempts attempts made"
     
     return 0
 }
 
-procesar_argumentos() {
+processArguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             -v|--verbose)
-                verboso=1
+                verbose=1
                 shift
                 ;;
             -l|--log)
-                log_habilitado=1
-                archivo_log="./log_$(date '+%Y%m%d_%H%M%S').log"
-                echo "=== Log Adivinar Número - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$archivo_log"
+                logEnabled=1
+                logFile="./log_$(date '+%Y%m%d_%H%M%S').log"
+                echo "=== Number Guessing Game Log - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$logFile"
                 shift
                 ;;
             -p|--password)
                 if [[ -n "${2:-}" ]]; then
-                    clave_encriptacion="$2"
+                    encryptionKey="$2"
                     shift 2
                 else
-                    echo -e "${ROJO}Error:${RESET} -p requiere una clave" >&2
+                    echo -e "${RED}Error:${RESET} -p requires a key" >&2
                     exit 1
                 fi
                 ;;
             -r|--resume)
                 if [[ -n "${2:-}" ]]; then
-                    archivo_guardado="$2"
-                    cargar_partida=1
+                    savedFile="$2"
+                    loadGame=1
                     shift 2
                 else
-                    echo -e "${ROJO}Error:${RESET} -r requiere un archivo" >&2
+                    echo -e "${RED}Error:${RESET} -r requires a file" >&2
                     exit 1
                 fi
                 ;;
             -c|--cheat)
-                if [[ -n "${2:-}" ]] && validar_numero "$2"; then
-                    numero_secreto="$2"
-                    trampa=1
+                if [[ -n "${2:-}" ]] && validateNumber "$2"; then
+                    secretNumber="$2"
+                    cheatMode=1
                     shift 2
                 else
-                    echo -e "${ROJO}Error:${RESET} -c requiere un número entre 1-100" >&2
+                    echo -e "${RED}Error:${RESET} -c requires a number between 1-100" >&2
                     exit 1
                 fi
                 ;;
             -h|--help)
-                mostrar_ayuda
+                showHelp
                 exit 0
                 ;;
             *)
-                echo -e "${ROJO}Error:${RESET} Opción desconocida: $1" >&2
-                echo "Usa -h para ver la ayuda" >&2
+                echo -e "${RED}Error:${RESET} Unknown option: $1" >&2
+                echo "Use -h for help" >&2
                 exit 1
                 ;;
         esac
     done
 }
 
-iniciar_juego() {
-    local tiempo_inicio tiempo_fin tiempo_total minutos segundos
-    tiempo_inicio=$(date +%s)
+startGame() {
+    local startTime endTime totalTime minutes seconds
+    startTime=$(date +%s)
     
-    depurar "Iniciando juego - $(date)"
+    debug "Starting game - $(date)"
     
-    if [[ $cargar_partida -eq 1 ]]; then
-        if ! cargar_partida_guardada "$archivo_guardado"; then
+    if [[ $loadGame -eq 1 ]]; then
+        if ! loadSavedGame "$savedFile"; then
             exit 1
         fi
     fi
 
-    if [[ -z "$numero_secreto" ]]; then
-        numero_secreto=$((RANDOM % 100 + 1))
-        depurar "Número generado: $numero_secreto"
+    if [[ -z "$secretNumber" ]]; then
+        secretNumber=$((RANDOM % 100 + 1))
+        debug "Generated number: $secretNumber"
     fi
 
-    if [[ $cargar_partida -eq 0 ]]; then
-        intentos=0
+    if [[ $loadGame -eq 0 ]]; then
+        attempts=0
     fi
     
-    mostrar "¡Bienvenido al juego de adivinar el número!"
-    mostrar "Estoy pensando en un número entre 1 y 100..."
+    display "Welcome to the number guessing game!"
+    display "I'm thinking of a number between 1 and 100..."
     
-    if [[ $cargar_partida -eq 1 ]]; then
-        mostrar "Continuando partida con $intentos intentos realizados"
+    if [[ $loadGame -eq 1 ]]; then
+        display "Continuing game with $attempts attempts made"
     fi
 
-    local adivinado=0
-    while [[ $adivinado -eq 0 && $intentos -lt $MAX_ATTEMPTS ]]; do
-        ((intentos++))
+    local guessed=0
+    while [[ $guessed -eq 0 && $attempts -lt $MAX_ATTEMPTS ]]; do
+        ((attempts++))
         
-        echo -n "Intento $intentos: Número (1-100) o 'guardar': "
-        read -r respuesta
+        echo -n "Attempt $attempts: Number (1-100) or 'save': "
+        read -r response
         
-        log_mensaje "Intento $intentos: '$respuesta'"
-        depurar "Entrada del usuario: '$respuesta'"
+        logMessage "Attempt $attempts: '$response'"
+        debug "User input: '$response'"
         
-        if [[ "$respuesta" == "guardar" ]]; then
-            echo -n "Nombre del archivo (Enter para automático): "
-            read -r nombre_guardado
+        if [[ "$response" == "save" ]]; then
+            echo -n "Filename (Enter for automatic): "
+            read -r saveName
             
-            local clave_guardado="$clave_encriptacion"
-            if [[ -z "$clave_encriptacion" ]]; then
-                echo -n "¿Establecer contraseña personalizada? (s/N): "
-                read -r respuesta_password
-                if [[ "$respuesta_password" =~ ^[sS]$ ]]; then
-                    echo -n "Contraseña: "
-                    read -rs clave_guardado
+            local saveKey="$encryptionKey"
+            if [[ -z "$encryptionKey" ]]; then
+                echo -n "Set custom password? (y/N): "
+                read -r passwordResponse
+                if [[ "$passwordResponse" =~ ^[yY]$ ]]; then
+                    echo -n "Password: "
+                    read -rs saveKey
                     echo
-                    echo -n "Confirmar: "
-                    read -rs confirm_password
+                    echo -n "Confirm: "
+                    read -rs confirmPassword
                     echo
-                    if [[ "$clave_guardado" != "$confirm_password" ]]; then
-                        mostrar "${ROJO}Contraseñas no coinciden. Usando clave por defecto${RESET}"
-                        clave_guardado=""
+                    if [[ "$saveKey" != "$confirmPassword" ]]; then
+                        display "${RED}Passwords don't match. Using default key${RESET}"
+                        saveKey=""
                     fi
                 fi
             fi
             
-            if guardar_partida "$nombre_guardado" "$clave_guardado"; then
-                mostrar "Para continuar: $0 -r [archivo]"
-                if [[ -n "$clave_guardado" ]]; then
-                    mostrar "Recuerda usar -p para la contraseña"
+            if saveGame "$saveName" "$saveKey"; then
+                display "To continue: $0 -r [file]"
+                if [[ -n "$saveKey" ]]; then
+                    display "Remember to use -p for password"
                 fi
                 exit 0
             fi
             
-            ((intentos--))
+            ((attempts--))
             continue
         fi
         
-        if ! validar_numero "$respuesta"; then
-            mostrar "Introduce un número válido entre 1 y 100"
-            ((intentos--))
+        if ! validateNumber "$response"; then
+            display "Enter a valid number between 1 and 100"
+            ((attempts--))
             continue
         fi
         
-        if [[ $respuesta -eq $numero_secreto ]]; then
-            mostrar "${VERDE}¡Felicidades! Adivinaste en $intentos intentos${RESET}"
-            adivinado=1
-        elif [[ $respuesta -lt $numero_secreto ]]; then
-            mostrar "El número es MAYOR que $respuesta"
+        if [[ $response -eq $secretNumber ]]; then
+            display "${GREEN}Congratulations! You guessed it in $attempts attempts${RESET}"
+            guessed=1
+        elif [[ $response -lt $secretNumber ]]; then
+            display "The number is HIGHER than $response"
         else
-            mostrar "El número es MENOR que $respuesta"
+            display "The number is LOWER than $response"
         fi
     done
     
-    if [[ $adivinado -eq 0 ]]; then
-        mostrar "${ROJO}¡Máximo de intentos alcanzado!${RESET}"
-        mostrar "El número era: $numero_secreto"
+    if [[ $guessed -eq 0 ]]; then
+        display "${RED}Maximum number of attempts reached!${RESET}"
+        display "The number was: $secretNumber"
     fi
     
-    tiempo_fin=$(date +%s)
-    tiempo_total=$((tiempo_fin - tiempo_inicio))
-    minutos=$((tiempo_total / 60))
-    segundos=$((tiempo_total % 60))
+    endTime=$(date +%s)
+    totalTime=$((endTime - startTime))
+    minutes=$((totalTime / 60))
+    seconds=$((totalTime % 60))
     
-    mostrar "Tiempo de juego: ${minutos}m ${segundos}s"
+    display "Game time: ${minutes}m ${seconds}s"
     
-    if [[ $trampa -eq 1 ]]; then
-        mostrar "${NARANJA}Modo trampa utilizado${RESET}"
+    if [[ $cheatMode -eq 1 ]]; then
+        display "${ORANGE}Cheat mode used${RESET}"
     fi
     
-    if [[ $log_habilitado -eq 1 ]]; then
-        mostrar "Log guardado en: $archivo_log"
+    if [[ $logEnabled -eq 1 ]]; then
+        display "Log saved to: $logFile"
     fi
     
-    depurar "Juego finalizado correctamente"
+    debug "Game finished correctly"
 }
 
 main() {
-    verificar_dependencias
-    procesar_argumentos "$@"
-    iniciar_juego
+    verifyDependencies
+    processArguments "$@"
+    startGame
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
