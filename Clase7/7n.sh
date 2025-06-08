@@ -8,7 +8,7 @@
 #  -v          : Activates verbose mode (shows debug messages)
 #  -l          : Activates logging to an automatically generated log file
 #  -c [1-100]  : Sets a predefined number (cheat mode)
-#  -r [file]   : Resumes a previously saved game
+#  -r [file]   : Resumes a previously saved game (.ngsave format)
 #  -p [key]    : Sets a custom encryption key
 #  -h          : Shows help
 #
@@ -76,7 +76,7 @@ EXAMPLES:
   $0                    # Normal mode
   $0 -v -l              # Verbose mode with logging
   $0 -c 42              # Cheat mode with number 42
-  $0 -r game.tar.gz     # Resume saved game
+  $0 -r game.ngsave     # Resume saved game
 
 During the game, type 'save' to save the current game or 'quit' to exit.
 EOF
@@ -228,9 +228,9 @@ saveGame() {
     local tempChecksumEnc="$TEMP_DIR/game_checksum_enc.save"
     
     if [[ -z "$filename" ]]; then
-        filename="game-$(date '+%Y%m%d-%H%M%S').tar.gz"
-    elif [[ ! "$filename" =~ \.tar\.gz$ ]]; then
-        filename="${filename}.tar.gz"
+        filename="game-$(date '+%Y%m%d-%H%M%S').ngsave"
+    elif [[ ! "$filename" =~ \.ngsave$ ]]; then
+        filename="${filename}.ngsave"
     fi
     
     if [[ "$filename" =~ [/\\] ]]; then
