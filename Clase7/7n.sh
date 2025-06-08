@@ -10,6 +10,7 @@
 #  -c [1-100]  : Sets a predefined number (cheat mode)
 #  -r [file]   : Resumes a previously saved game (.ngsave format)
 #  -p [key]    : Sets a custom encryption key
+#  -m [1-200]  : Sets maximum number of attempts (default: 50)
 #  -h          : Shows help
 #
 # During the game:
@@ -27,7 +28,7 @@ if [[ ! -d "$TEMP_DIR_VALUE" ]]; then
 fi
 
 readonly TEMP_DIR="$TEMP_DIR_VALUE"
-readonly MAX_ATTEMPTS=100
+readonly DEFAULT_MAX_ATTEMPTS=50
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
 
@@ -45,6 +46,7 @@ loadGame=0
 encryptionKey=""
 secretNumber=""
 attempts=0
+maxAttempts=$DEFAULT_MAX_ATTEMPTS
 
 trap 'cleanupExit' EXIT INT TERM
 
@@ -70,12 +72,14 @@ OPTIONS:
   -c [1-100]      Sets a predefined number (cheat mode)
   -r [file]       Resumes a saved game
   -p [key]        Sets a custom encryption key
+  -m [1-200]      Sets maximum number of attempts (default: 50)
   -h              Shows this help
 
 EXAMPLES:
   $0                    # Normal mode
   $0 -v -l              # Verbose mode with logging
   $0 -c 42              # Cheat mode with number 42
+  $0 -m 30              # Set maximum attempts to 30
   $0 -r game.ngsave     # Resume saved game
 
 During the game, type 'save' to save the current game or 'quit' to exit.
@@ -148,6 +152,20 @@ validateNumber() {
     fi
 
     if [[ $input -lt 1 || $input -gt 100 ]]; then
+        return 1
+    fi
+    
+    return 0
+}
+
+validateMaxAttempts() {
+    local input="$1"
+    
+    if [[ ! "$input" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+
+    if [[ $input -lt 1 || $input -gt 200 ]]; then
         return 1
     fi
     
@@ -241,6 +259,7 @@ saveGame() {
     cat > "$tempGame" << EOF
 secretNumber=$secretNumber
 attempts=$attempts
+maxAttempts=$maxAttempts
 cheatMode=$cheatMode
 verbose=$verbose
 logEnabled=$logEnabled
@@ -356,6 +375,7 @@ loadSavedGame() {
         case "$varKey" in
             secretNumber) secretNumber="$value" ;;
             attempts) attempts="$value" ;;
+            maxAttempts) maxAttempts="$value" ;;
             cheatMode) cheatMode="$value" ;;
             verbose) verbose="$value" ;;
             logEnabled) logEnabled="$value" ;;
@@ -420,6 +440,15 @@ processArguments() {
                     exit 1
                 fi
                 ;;
+            -m|--max-attempts)
+                if [[ -n "${2:-}" ]] && validateMaxAttempts "$2"; then
+                    maxAttempts="$2"
+                    shift 2
+                else
+                    echo -e "${RED}Error:${RESET} -m requires a number between 1-200" >&2
+                    exit 1
+                fi
+                ;;
             -h|--help)
                 showHelp
                 exit 0
@@ -462,21 +491,21 @@ startGame() {
     fi
 
     local guessed=0
-    while [[ $guessed -eq 0 && $attempts -lt $MAX_ATTEMPTS ]]; do
+    while [[ $guessed -eq 0 && $attempts -lt $maxAttempts ]]; do
         ((attempts++))
         
-        echo -n "Attempt $attempts: Number (1-100), 'save', or 'quit': "
+        echo -n "Attempt $attempts of $maxAttempts: Number (1-100), 'save', or 'quit': "
         read -r response
         
         logMessage "Attempt $attempts: '$response'"
         debug "User input: '$response'"
         
-        if [[ "$response" == "quit" ]]; then
+        if [[ "$response" == "quit" || "$response" == "q" ]]; then
             display "${ORANGE}Game quit by user${RESET}"
             display "The number was: $secretNumber"
             display "You made $((attempts-1)) attempts"
             exit 0
-        elif [[ "$response" == "save" ]]; then
+        elif [[ "$response" == "save" || "$response" == "s" ]]; then
             echo -n "Filename (Enter for automatic): "
             read -r saveName
             
@@ -511,7 +540,7 @@ startGame() {
         fi
         
         if ! validateNumber "$response"; then
-            display "Enter a valid number between 1 and 100, 'save', or 'quit'"
+            display "Enter a valid number between 1 and 100, 'save'/'s', or 'quit'/'q'"
             ((attempts--))
             continue
         fi
