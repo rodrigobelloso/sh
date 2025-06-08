@@ -14,6 +14,7 @@
 #
 # During the game:
 #  Type 'save' at any time to save the current game
+#  Type 'quit' at any time to exit the game
 #
 
 set -euo pipefail
@@ -77,7 +78,7 @@ EXAMPLES:
   $0 -c 42              # Cheat mode with number 42
   $0 -r game.tar.gz     # Resume saved game
 
-During the game, type 'save' to save the current game.
+During the game, type 'save' to save the current game or 'quit' to exit.
 EOF
 }
 
@@ -464,13 +465,18 @@ startGame() {
     while [[ $guessed -eq 0 && $attempts -lt $MAX_ATTEMPTS ]]; do
         ((attempts++))
         
-        echo -n "Attempt $attempts: Number (1-100) or 'save': "
+        echo -n "Attempt $attempts: Number (1-100), 'save', or 'quit': "
         read -r response
         
         logMessage "Attempt $attempts: '$response'"
         debug "User input: '$response'"
         
-        if [[ "$response" == "save" ]]; then
+        if [[ "$response" == "quit" ]]; then
+            display "${ORANGE}Game quit by user${RESET}"
+            display "The number was: $secretNumber"
+            display "You made $((attempts-1)) attempts"
+            exit 0
+        elif [[ "$response" == "save" ]]; then
             echo -n "Filename (Enter for automatic): "
             read -r saveName
             
@@ -505,7 +511,7 @@ startGame() {
         fi
         
         if ! validateNumber "$response"; then
-            display "Enter a valid number between 1 and 100"
+            display "Enter a valid number between 1 and 100, 'save', or 'quit'"
             ((attempts--))
             continue
         fi
