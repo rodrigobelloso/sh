@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #
-# Number guessr.
+# NumberGuessr.sh
+# NumberGuessr.sh is a number guessing game where you try to guess a secret number between 1 and 100
 #
 # Available parameters:
 #  -v          : Activates verbose mode (shows debug messages)
@@ -23,6 +24,7 @@ if [[ ! -d "$TEMP_DIR_VALUE" ]]; then
     echo "Error: Could not create temporary directory" >&2
     exit 1
 fi
+
 readonly TEMP_DIR="$TEMP_DIR_VALUE"
 readonly MAX_ATTEMPTS=100
 readonly MAX_SAVE_ATTEMPTS=3
@@ -55,6 +57,10 @@ cleanupExit() {
 
 showHelp() {
     cat << EOF
+
+NumberGuessr.sh help:
+====================
+
 Usage: $0 [OPTIONS]
 
 OPTIONS:
@@ -69,7 +75,7 @@ EXAMPLES:
   $0                    # Normal mode
   $0 -v -l              # Verbose mode with logging
   $0 -c 42              # Cheat mode with number 42
-  $0 -r game.save       # Resume saved game
+  $0 -r game.tar.gz     # Resume saved game
 
 During the game, type 'save' to save the current game.
 EOF
