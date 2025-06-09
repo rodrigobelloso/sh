@@ -32,6 +32,12 @@ readonly DEFAULT_MAX_ATTEMPTS=50
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
 
+# NumberGuessr folder structure
+readonly NUMBERGUESSR_DIR="$HOME/.numberguessr"
+readonly SAVES_DIR="$NUMBERGUESSR_DIR/saves"
+readonly LOGS_DIR="$NUMBERGUESSR_DIR/logs"
+readonly CONFIG_DIR="$NUMBERGUESSR_DIR/config"
+
 readonly ORANGE='\033[38;5;208m'
 readonly RED='\033[1;31m'
 readonly GREEN='\033[1;32m'
@@ -49,6 +55,39 @@ attempts=0
 maxAttempts=$DEFAULT_MAX_ATTEMPTS
 
 trap 'cleanupExit' EXIT INT TERM
+
+createNumberGuessrDirectories() {
+    debug "Checking NumberGuessr directory structure..."
+    
+    # Create main .numberguessr directory
+    if [[ ! -d "$NUMBERGUESSR_DIR" ]]; then
+        if mkdir -p "$NUMBERGUESSR_DIR" 2>/dev/null; then
+            debug "Created main directory: $NUMBERGUESSR_DIR"
+        else
+            echo -e "${RED}Error:${RESET} Could not create NumberGuessr directory: $NUMBERGUESSR_DIR" >&2
+            exit 1
+        fi
+    else
+        debug "NumberGuessr directory already exists: $NUMBERGUESSR_DIR"
+    fi
+    
+    # Create subdirectories
+    local subdirs=("$SAVES_DIR" "$LOGS_DIR" "$CONFIG_DIR")
+    for dir in "${subdirs[@]}"; do
+        if [[ ! -d "$dir" ]]; then
+            if mkdir -p "$dir" 2>/dev/null; then
+                debug "Created subdirectory: $dir"
+            else
+                echo -e "${RED}Error:${RESET} Could not create directory: $dir" >&2
+                exit 1
+            fi
+        else
+            debug "Directory already exists: $dir"
+        fi
+    done
+    
+    debug "NumberGuessr directory structure verified successfully"
+}
 
 cleanupExit() {
     local exitCode=$?
@@ -83,6 +122,11 @@ EXAMPLES:
   $0 -r game.ngsave     # Resume saved game
 
 During the game, type 'save' to save the current game or 'quit' to exit.
+
+FILES:
+  Saves are stored in: ~/.numberguessr/saves/
+  Logs are stored in:  ~/.numberguessr/logs/
+  Config files in:     ~/.numberguessr/config/
 EOF
 }
 
@@ -251,7 +295,10 @@ saveGame() {
         filename="${filename}.ngsave"
     fi
     
-    if [[ "$filename" =~ [/\\] ]]; then
+    # If filename doesn't contain path, save to saves directory
+    if [[ ! "$filename" =~ / ]]; then
+        filename="$SAVES_DIR/$filename"
+    elif [[ "$filename" =~ [\\] ]]; then
         echo -e "${RED}Error:${RESET} Invalid filename" >&2
         return 1
     fi
@@ -387,7 +434,7 @@ loadSavedGame() {
     }
 
     if [[ $logEnabled -eq 1 && -f "$tempDirGame/game_log.log" ]]; then
-        logFile="./continuation_log.log"
+        logFile="$LOGS_DIR/continuation_log_$(date '+%Y%m%d_%H%M%S').log"
         cp "$tempDirGame/game_log.log" "$logFile"
         echo "=== Continuation - $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$logFile"
     fi
@@ -407,7 +454,7 @@ processArguments() {
                 ;;
             -l|--log)
                 logEnabled=1
-                logFile="./log_$(date '+%Y%m%d_%H%M%S').log"
+                logFile="$LOGS_DIR/log_$(date '+%Y%m%d_%H%M%S').log"
                 echo "=== Number Guessing Game Log - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$logFile"
                 shift
                 ;;
@@ -422,7 +469,12 @@ processArguments() {
                 ;;
             -r|--resume)
                 if [[ -n "${2:-}" ]]; then
-                    savedFile="$2"
+                    # If file doesn't contain path, look in saves directory
+                    if [[ ! "$2" =~ / ]]; then
+                        savedFile="$SAVES_DIR/$2"
+                    else
+                        savedFile="$2"
+                    fi
                     loadGame=1
                     shift 2
                 else
@@ -584,6 +636,7 @@ startGame() {
 
 main() {
     verifyDependencies
+    createNumberGuessrDirectories
     processArguments "$@"
     startGame
 }
