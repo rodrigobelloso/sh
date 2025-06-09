@@ -36,6 +36,7 @@ readonly NUMBERGUESSR_DIR="$HOME/.numberguessr"
 readonly SAVES_DIR="$NUMBERGUESSR_DIR/saves"
 readonly LOGS_DIR="$NUMBERGUESSR_DIR/logs"
 readonly CONFIG_DIR="$NUMBERGUESSR_DIR/config"
+readonly CONFIG_FILE="$CONFIG_DIR/.ngconf"
 
 readonly ORANGE='\033[38;5;208m'
 readonly RED='\033[1;31m'
@@ -86,6 +87,56 @@ createNumberGuessrDirectories() {
     debug "NumberGuessr directory structure verified successfully"
 }
 
+createDefaultConfig() {
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        cat > "$CONFIG_FILE" << 'EOF'
+defaultMaxAttempts=50
+autoLog=false
+verboseMode=false
+saveDirectory=auto
+logDirectory=auto
+EOF
+        debug "Created default configuration file: $CONFIG_FILE"
+    else
+        debug "Configuration file already exists: $CONFIG_FILE"
+    fi
+}
+
+loadConfig() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        debug "Loading configuration from: $CONFIG_FILE"
+        
+        while IFS='=' read -r key value; do
+            [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+            
+            case "$key" in
+                defaultMaxAttempts)
+                    if validateMaxAttempts "$value"; then
+                        maxAttempts="$value"
+                        debug "Config: Set max attempts to $value"
+                    fi
+                    ;;
+                autoLog)
+                    if [[ "$value" == "true" ]]; then
+                        logEnabled=1
+                        logFile="$LOGS_DIR/log_$(date '+%Y%m%d_%H%M%S').log"
+                        echo "=== Number Guessing Game Log - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$logFile"
+                        debug "Config: Auto-logging enabled"
+                    fi
+                    ;;
+                verboseMode)
+                    if [[ "$value" == "true" ]]; then
+                        verbose=1
+                        debug "Config: Verbose mode enabled"
+                    fi
+                    ;;
+            esac
+        done < "$CONFIG_FILE"
+    else
+        debug "No configuration file found"
+    fi
+}
+
 cleanupExit() {
     local exitCode=$?
     if [[ -d "$TEMP_DIR" ]]; then
@@ -119,11 +170,6 @@ EXAMPLES:
   $0 -r game.ngsave     # Resume saved game
 
 During the game, type 'save' to save the current game or 'quit' to exit.
-
-FILES:
-  Saves are stored in: ~/.numberguessr/saves/
-  Logs are stored in:  ~/.numberguessr/logs/
-  Config files in:     ~/.numberguessr/config/
 EOF
 }
 
@@ -632,6 +678,8 @@ startGame() {
 main() {
     verifyDependencies
     createNumberGuessrDirectories
+    createDefaultConfig
+    loadConfig
     processArguments "$@"
     startGame
 }
