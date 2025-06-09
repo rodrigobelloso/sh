@@ -21,8 +21,10 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly TEMP_DIR="$(mktemp -d -t numberguessr.XXXXXX)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+TEMP_DIR="$(mktemp -d -t numberguessr.XXXXXX)"
+readonly TEMP_DIR
 readonly DEFAULT_MAX_ATTEMPTS=50
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
