@@ -32,7 +32,6 @@ readonly DEFAULT_MAX_ATTEMPTS=50
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
 
-# NumberGuessr folder structure
 readonly NUMBERGUESSR_DIR="$HOME/.numberguessr"
 readonly SAVES_DIR="$NUMBERGUESSR_DIR/saves"
 readonly LOGS_DIR="$NUMBERGUESSR_DIR/logs"
@@ -59,7 +58,6 @@ trap 'cleanupExit' EXIT INT TERM
 createNumberGuessrDirectories() {
     debug "Checking NumberGuessr directory structure..."
     
-    # Create main .numberguessr directory
     if [[ ! -d "$NUMBERGUESSR_DIR" ]]; then
         if mkdir -p "$NUMBERGUESSR_DIR" 2>/dev/null; then
             debug "Created main directory: $NUMBERGUESSR_DIR"
@@ -71,7 +69,6 @@ createNumberGuessrDirectories() {
         debug "NumberGuessr directory already exists: $NUMBERGUESSR_DIR"
     fi
     
-    # Create subdirectories
     local subdirs=("$SAVES_DIR" "$LOGS_DIR" "$CONFIG_DIR")
     for dir in "${subdirs[@]}"; do
         if [[ ! -d "$dir" ]]; then
@@ -294,8 +291,7 @@ saveGame() {
     elif [[ ! "$filename" =~ \.ngsave$ ]]; then
         filename="${filename}.ngsave"
     fi
-    
-    # If filename doesn't contain path, save to saves directory
+
     if [[ ! "$filename" =~ / ]]; then
         filename="$SAVES_DIR/$filename"
     elif [[ "$filename" =~ [\\] ]]; then
@@ -469,7 +465,6 @@ processArguments() {
                 ;;
             -r|--resume)
                 if [[ -n "${2:-}" ]]; then
-                    # If file doesn't contain path, look in saves directory
                     if [[ ! "$2" =~ / ]]; then
                         savedFile="$SAVES_DIR/$2"
                     else
