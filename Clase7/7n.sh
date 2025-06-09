@@ -21,16 +21,12 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-TEMP_DIR_VALUE="$(mktemp -d)"
-if [[ ! -d "$TEMP_DIR_VALUE" ]]; then
-    echo "Error: Could not create temporary directory" >&2
-    exit 1
-fi
-
-readonly TEMP_DIR="$TEMP_DIR_VALUE"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TEMP_DIR="$(mktemp -d -t numberguessr.XXXXXX)"
 readonly DEFAULT_MAX_ATTEMPTS=50
 readonly MAX_SAVE_ATTEMPTS=3
 readonly ENCRYPTION_ROUNDS=10000
+readonly SAVE_FORMAT_VERSION="2.1"
 
 readonly NUMBERGUESSR_DIR="$HOME/.numberguessr"
 readonly SAVES_DIR="$NUMBERGUESSR_DIR/saves"
@@ -41,6 +37,7 @@ readonly CONFIG_FILE="$CONFIG_DIR/.ngconf"
 readonly ORANGE='\033[38;5;208m'
 readonly RED='\033[1;31m'
 readonly GREEN='\033[1;32m'
+readonly YELLOW='\033[1;33m'
 readonly RESET='\033[0m'
 
 cheatMode=0
@@ -56,31 +53,29 @@ maxAttempts=$DEFAULT_MAX_ATTEMPTS
 
 trap 'cleanupExit' EXIT INT TERM
 
+cleanupExit() {
+    local exitCode=$?
+    if [[ -d "$TEMP_DIR" ]]; then
+        find "$TEMP_DIR" -type f -exec rm -f {} \; 2>/dev/null || true
+        rm -rf "$TEMP_DIR" 2>/dev/null || true
+    fi
+    exit $exitCode
+}
+
 createNumberGuessrDirectories() {
     debug "Checking NumberGuessr directory structure..."
     
-    if [[ ! -d "$NUMBERGUESSR_DIR" ]]; then
-        if mkdir -p "$NUMBERGUESSR_DIR" 2>/dev/null; then
-            debug "Created main directory: $NUMBERGUESSR_DIR"
-        else
-            echo -e "${RED}Error:${RESET} Could not create NumberGuessr directory: $NUMBERGUESSR_DIR" >&2
-            exit 1
-        fi
-    else
-        debug "NumberGuessr directory already exists: $NUMBERGUESSR_DIR"
-    fi
-    
-    local subdirs=("$SAVES_DIR" "$LOGS_DIR" "$CONFIG_DIR")
-    for dir in "${subdirs[@]}"; do
+    local dirs=("$NUMBERGUESSR_DIR" "$SAVES_DIR" "$LOGS_DIR" "$CONFIG_DIR")
+    for dir in "${dirs[@]}"; do
         if [[ ! -d "$dir" ]]; then
-            if mkdir -p "$dir" 2>/dev/null; then
-                debug "Created subdirectory: $dir"
-            else
+            if ! mkdir -p "$dir" 2>/dev/null; then
                 echo -e "${RED}Error:${RESET} Could not create directory: $dir" >&2
                 exit 1
             fi
+            chmod 700 "$dir"
+            debug "Created directory: $dir"
         else
-            debug "Directory already exists: $dir"
+            debug "Directory exists: $dir"
         fi
     done
     
@@ -96,6 +91,7 @@ verboseMode=false
 saveDirectory=auto
 logDirectory=auto
 EOF
+        chmod 600 "$CONFIG_FILE"
         debug "Created default configuration file: $CONFIG_FILE"
     else
         debug "Configuration file already exists: $CONFIG_FILE"
@@ -108,6 +104,8 @@ loadConfig() {
         
         while IFS='=' read -r key value; do
             [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+            key=$(echo "$key" | tr -d '[:space:]')
+            value=$(echo "$value" | tr -d '[:space:]')
             
             case "$key" in
                 defaultMaxAttempts)
@@ -121,6 +119,7 @@ loadConfig() {
                         logEnabled=1
                         logFile="$LOGS_DIR/log_$(date '+%Y%m%d_%H%M%S').log"
                         echo "=== Number Guessing Game Log - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$logFile"
+                        chmod 600 "$logFile"
                         debug "Config: Auto-logging enabled"
                     fi
                     ;;
@@ -135,14 +134,6 @@ loadConfig() {
     else
         debug "No configuration file found"
     fi
-}
-
-cleanupExit() {
-    local exitCode=$?
-    if [[ -d "$TEMP_DIR" ]]; then
-        rm -rf "$TEMP_DIR" 2>/dev/null || true
-    fi
-    exit $exitCode
 }
 
 showHelp() {
@@ -186,7 +177,7 @@ logMessage() {
 display() {
     local message="$1"
     echo -e "$message"
-    logMessage "$message"
+    logMessage "$(echo -e "$message" | sed 's/\x1b\[[0-9;]*m//g')"
 }
 
 debug() {
@@ -234,29 +225,39 @@ generateChecksum() {
 validateNumber() {
     local input="$1"
     
-    if [[ ! "$input" =~ ^[0-9]+$ ]]; then
+    [[ "$input" =~ ^[0-9]+$ ]] && [[ $input -ge 1 && $input -le 100 ]]
+}
+
+validateMaxAttempts() {
+    local input="$1"
+    
+    [[ "$input" =~ ^[0-9]+$ ]] && [[ $input -ge 1 && $input -le 200 ]]
+}
+
+validateFilename() {
+    local filename="$1"
+    
+    if [[ "$filename" =~ [^a-zA-Z0-9._-] ]]; then
         return 1
     fi
-
-    if [[ $input -lt 1 || $input -gt 100 ]]; then
+    
+    if [[ ${#filename} -gt 255 ]]; then
+        return 1
+    fi
+    
+    if [[ "$filename" =~ ^\.\./ || "$filename" =~ /\.\./ || "$filename" =~ /\.\.$  ]]; then
         return 1
     fi
     
     return 0
 }
 
-validateMaxAttempts() {
-    local input="$1"
-    
-    if [[ ! "$input" =~ ^[0-9]+$ ]]; then
-        return 1
+secureRandom() {
+    if [[ -c /dev/urandom ]]; then
+        od -vAn -N4 -tu4 < /dev/urandom | tr -d ' '
+    else
+        echo $((RANDOM * RANDOM))
     fi
-
-    if [[ $input -lt 1 || $input -gt 200 ]]; then
-        return 1
-    fi
-    
-    return 0
 }
 
 encryptFile() {
@@ -264,7 +265,7 @@ encryptFile() {
     local outputFile="$2"
     local key="$3"
     
-    debug "Encrypting: $inputFile -> $outputFile"
+    debug "Encrypting: $(basename "$inputFile") -> $(basename "$outputFile")"
 
     if openssl enc -aes-256-gcm -help &>/dev/null; then
         openssl enc -aes-256-gcm -salt -pbkdf2 -iter "$ENCRYPTION_ROUNDS" \
@@ -280,7 +281,7 @@ decryptFile() {
     local outputFile="$2"
     local key="$3"
     
-    debug "Decrypting: $inputFile -> $outputFile"
+    debug "Decrypting: $(basename "$inputFile") -> $(basename "$outputFile")"
 
     if openssl enc -aes-256-gcm -d -salt -pbkdf2 -iter "$ENCRYPTION_ROUNDS" \
             -in "$inputFile" -out "$outputFile" -k "$key" 2>/dev/null; then
@@ -294,13 +295,12 @@ decryptFile() {
 }
 
 generateDefaultKey() {
-    local systemInfo
+    local systemInfo userInfo
     systemInfo=$(uname -a 2>/dev/null || echo "unknown")
-    local userInfo
     userInfo=$(id -u 2>/dev/null || echo "0")
     
-    printf "%s|%s|%s" "$systemInfo" "$userInfo" "$(basename "$0")" | \
-        openssl sha256 | awk '{print $NF}'
+    printf "%s|%s|%s|%s" "$systemInfo" "$userInfo" "$(basename "$0")" "$(stat -c %i "$SCRIPT_DIR" 2>/dev/null || echo "0")" | \
+        openssl sha256 2>/dev/null | awk '{print $NF}' || echo "fallback$(date +%s)"
 }
 
 validateSavedFile() {
@@ -313,6 +313,13 @@ validateSavedFile() {
 
     if [[ ! -r "$file" ]]; then
         echo -e "${RED}Error:${RESET} No read permissions: $file" >&2
+        return 1
+    fi
+
+    local fileSize
+    fileSize=$(stat -c%s "$file" 2>/dev/null || wc -c < "$file" 2>/dev/null)
+    if [[ -z "$fileSize" || $fileSize -gt 10485760 ]]; then
+        echo -e "${RED}Error:${RESET} File too large or invalid: $file" >&2
         return 1
     fi
 
@@ -338,11 +345,15 @@ saveGame() {
         filename="${filename}.ngsave"
     fi
 
-    if [[ ! "$filename" =~ / ]]; then
-        filename="$SAVES_DIR/$filename"
-    elif [[ "$filename" =~ [\\] ]]; then
+    local baseFilename
+    baseFilename=$(basename "$filename")
+    if ! validateFilename "$baseFilename"; then
         echo -e "${RED}Error:${RESET} Invalid filename" >&2
         return 1
+    fi
+
+    if [[ ! "$filename" =~ / ]]; then
+        filename="$SAVES_DIR/$filename"
     fi
 
     cat > "$tempGame" << EOF
@@ -354,8 +365,11 @@ verbose=$verbose
 logEnabled=$logEnabled
 logFile=$logFile
 timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-version=2.0
+version=$SAVE_FORMAT_VERSION
+scriptHash=$(sha256sum "$0" 2>/dev/null | cut -d' ' -f1 || echo "unknown")
 EOF
+
+    chmod 600 "$tempGame"
 
     local checksum
     checksum=$(generateChecksum "$tempGame")
@@ -365,6 +379,7 @@ EOF
     fi
     
     echo "$checksum" > "$tempChecksum"
+    chmod 600 "$tempChecksum"
     debug "Generated checksum: $checksum"
 
     local key="${customKey:-${encryptionKey:-$(generateDefaultKey)}}"
@@ -383,10 +398,12 @@ EOF
 
     if [[ $logEnabled -eq 1 && -n "$logFile" && -f "$logFile" ]]; then
         cp "$logFile" "$TEMP_DIR/game_log.log"
+        chmod 600 "$TEMP_DIR/game_log.log"
         tarFiles+=("game_log.log")
     fi
     
     if tar -czf "$filename" -C "$TEMP_DIR" "${tarFiles[@]}" 2>/dev/null; then
+        chmod 600 "$filename"
         display "${GREEN}Game saved to:${RESET} $filename"
         return 0
     else
@@ -404,6 +421,7 @@ loadSavedGame() {
     fi
     
     mkdir -p "$tempDirGame"
+    chmod 700 "$tempDirGame"
 
     if ! tar -xzf "$file" -C "$tempDirGame" 2>/dev/null; then
         echo -e "${RED}Error:${RESET} Could not extract file" >&2
@@ -460,24 +478,51 @@ loadSavedGame() {
     
     display "${GREEN}Integrity verification successful${RESET}"
 
+    local loadedVersion=""
     while IFS='=' read -r varKey value; do
         case "$varKey" in
-            secretNumber) secretNumber="$value" ;;
-            attempts) attempts="$value" ;;
-            maxAttempts) maxAttempts="$value" ;;
-            cheatMode) cheatMode="$value" ;;
-            verbose) verbose="$value" ;;
-            logEnabled) logEnabled="$value" ;;
+            secretNumber) 
+                if validateNumber "$value"; then
+                    secretNumber="$value"
+                else
+                    echo -e "${RED}Error:${RESET} Invalid secret number in save file" >&2
+                    return 1
+                fi
+                ;;
+            attempts) 
+                if [[ "$value" =~ ^[0-9]+$ ]] && [[ $value -ge 0 ]]; then
+                    attempts="$value"
+                else
+                    echo -e "${RED}Error:${RESET} Invalid attempts count in save file" >&2
+                    return 1
+                fi
+                ;;
+            maxAttempts) 
+                if validateMaxAttempts "$value"; then
+                    maxAttempts="$value"
+                else
+                    echo -e "${YELLOW}Warning:${RESET} Invalid max attempts in save file, using current value"
+                fi
+                ;;
+            cheatMode) [[ "$value" =~ ^[01]$ ]] && cheatMode="$value" ;;
+            verbose) [[ "$value" =~ ^[01]$ ]] && verbose="$value" ;;
+            logEnabled) [[ "$value" =~ ^[01]$ ]] && logEnabled="$value" ;;
             logFile) logFile="$value" ;;
+            version) loadedVersion="$value" ;;
         esac
     done < "$gameDec" || { 
         echo -e "${RED}Error:${RESET} Could not load game data" >&2
         return 1
     }
 
+    if [[ -n "$loadedVersion" && "$loadedVersion" != "$SAVE_FORMAT_VERSION" ]]; then
+        display "${YELLOW}Warning:${RESET} Save file format version mismatch (loaded: $loadedVersion, current: $SAVE_FORMAT_VERSION)"
+    fi
+
     if [[ $logEnabled -eq 1 && -f "$tempDirGame/game_log.log" ]]; then
         logFile="$LOGS_DIR/continuation_log_$(date '+%Y%m%d_%H%M%S').log"
         cp "$tempDirGame/game_log.log" "$logFile"
+        chmod 600 "$logFile"
         echo "=== Continuation - $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$logFile"
     fi
     
@@ -498,6 +543,7 @@ processArguments() {
                 logEnabled=1
                 logFile="$LOGS_DIR/log_$(date '+%Y%m%d_%H%M%S').log"
                 echo "=== Number Guessing Game Log - $(date '+%Y-%m-%d %H:%M:%S') ===" > "$logFile"
+                chmod 600 "$logFile"
                 shift
                 ;;
             -p|--password)
@@ -568,7 +614,9 @@ startGame() {
     fi
 
     if [[ -z "$secretNumber" ]]; then
-        secretNumber=$((RANDOM % 100 + 1))
+        local randomValue
+        randomValue=$(secureRandom)
+        secretNumber=$((randomValue % 100 + 1))
         debug "Generated number: $secretNumber"
     fi
 
@@ -584,6 +632,8 @@ startGame() {
     fi
 
     local guessed=0
+    local lastGuess=""
+    
     while [[ $guessed -eq 0 && $attempts -lt $maxAttempts ]]; do
         ((attempts++))
         
@@ -593,59 +643,71 @@ startGame() {
         logMessage "Attempt $attempts: '$response'"
         debug "User input: '$response'"
         
-        if [[ "$response" == "quit" || "$response" == "q" ]]; then
-            display "${ORANGE}Game quit by user${RESET}"
-            display "The number was: $secretNumber"
-            display "You made $((attempts-1)) attempts"
-            exit 0
-        elif [[ "$response" == "save" || "$response" == "s" ]]; then
-            echo -n "Filename (Enter for automatic): "
-            read -r saveName
-            
-            local saveKey="$encryptionKey"
-            if [[ -z "$encryptionKey" ]]; then
-                echo -n "Set custom password? (y/N): "
-                read -r passwordResponse
-                if [[ "$passwordResponse" =~ ^[yY]$ ]]; then
-                    echo -n "Password: "
-                    read -rs saveKey
-                    echo
-                    echo -n "Confirm: "
-                    read -rs confirmPassword
-                    echo
-                    if [[ "$saveKey" != "$confirmPassword" ]]; then
-                        display "${RED}Passwords don't match. Using default key${RESET}"
-                        saveKey=""
+        case "$response" in
+            quit|q)
+                display "${ORANGE}Game quit by user${RESET}"
+                display "The number was: $secretNumber"
+                display "You made $((attempts-1)) attempts"
+                exit 0
+                ;;
+            save|s)
+                echo -n "Filename (Enter for automatic): "
+                read -r saveName
+                
+                local saveKey="$encryptionKey"
+                if [[ -z "$encryptionKey" ]]; then
+                    echo -n "Set custom password? (y/N): "
+                    read -r passwordResponse
+                    if [[ "$passwordResponse" =~ ^[yY]$ ]]; then
+                        echo -n "Password: "
+                        read -rs saveKey
+                        echo
+                        echo -n "Confirm: "
+                        read -rs confirmPassword
+                        echo
+                        if [[ "$saveKey" != "$confirmPassword" ]]; then
+                            display "${RED}Passwords don't match. Using default key${RESET}"
+                            saveKey=""
+                        fi
                     fi
                 fi
-            fi
-            
-            if saveGame "$saveName" "$saveKey"; then
-                display "To continue: $0 -r [file]"
-                if [[ -n "$saveKey" ]]; then
-                    display "Remember to use -p for password"
+                
+                if saveGame "$saveName" "$saveKey"; then
+                    display "To continue: $0 -r [file]"
+                    if [[ -n "$saveKey" ]]; then
+                        display "Remember to use -p for password"
+                    fi
+                    exit 0
                 fi
-                exit 0
-            fi
-            
-            ((attempts--))
-            continue
-        fi
-        
-        if ! validateNumber "$response"; then
-            display "Enter a valid number between 1 and 100, 'save', or 'quit'"
-            ((attempts--))
-            continue
-        fi
-        
-        if [[ $response -eq $secretNumber ]]; then
-            display "${GREEN}Congratulations! You guessed it in $attempts attempts${RESET}"
-            guessed=1
-        elif [[ $response -lt $secretNumber ]]; then
-            display "The number is HIGHER than $response"
-        else
-            display "The number is LOWER than $response"
-        fi
+                
+                ((attempts--))
+                continue
+                ;;
+            *)
+                if ! validateNumber "$response"; then
+                    display "Enter a valid number between 1 and 100, 'save', or 'quit'"
+                    ((attempts--))
+                    continue
+                fi
+                
+                if [[ "$response" == "$lastGuess" ]]; then
+                    display "${YELLOW}You already guessed $response. Try a different number.${RESET}"
+                    ((attempts--))
+                    continue
+                fi
+                
+                lastGuess="$response"
+                
+                if [[ $response -eq $secretNumber ]]; then
+                    display "${GREEN}Congratulations! You guessed it in $attempts attempts${RESET}"
+                    guessed=1
+                elif [[ $response -lt $secretNumber ]]; then
+                    display "The number is HIGHER than $response"
+                else
+                    display "The number is LOWER than $response"
+                fi
+                ;;
+        esac
     done
     
     if [[ $guessed -eq 0 ]]; then
